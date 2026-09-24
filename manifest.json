@@ -2,7 +2,7 @@
  "manifest_version":3,"name":"Cautious Review — local preview","version":"0.2.0",
  "description":"Keyboard review, source-linked evidence, readability diagnostics and an undoable local queue. No live Greenhouse writes.",
  "minimum_chrome_version":"120",
- "content_scripts":[{"matches":["https://app.greenhouse.io/*","https://app.eu.greenhouse.io/*"],"js":["content.js","assist.js"],"run_at":"document_idle","all_frames":false}],
+ "content_scripts":[{"matches":["https://app.greenhouse.io/*","https://app2.greenhouse.io/*","https://app3.greenhouse.io/*","https://app4.greenhouse.io/*","https://app5.greenhouse.io/*","https://app.eu.greenhouse.io/*"],"js":["content.js","assist.js"],"run_at":"document_idle","all_frames":false}],
  "background":{"service_worker":"background.js","type":"module"},
  "content_security_policy":{"extension_pages":"script-src 'self'; object-src 'none'; connect-src 'none'"}
 }

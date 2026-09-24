@@ -1,4 +1,4 @@
-export const HOSTS = new Set(["app.greenhouse.io", "app.eu.greenhouse.io"]);
+export const HOSTS = new Set(["app.greenhouse.io", "app2.greenhouse.io", "app3.greenhouse.io", "app4.greenhouse.io", "app5.greenhouse.io", "app.eu.greenhouse.io"]);
 export type Decision = "advance" | "maybe" | "reject";
 export interface Context { key: string; origin: string; candidateId?: string; applicationId?: string; url: string }
 export interface CandidateDocument extends Context { name: string; text: string; indexedAt: string }

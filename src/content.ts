@@ -15,8 +15,8 @@
     #status { min-height:20px; } #results { max-height:220px;overflow:auto; } article { border-top:1px solid #dde3eb;padding:8px 0; }
     a { color:#16499a; } article p { white-space:pre-wrap; } details { margin-top:8px; } button:disabled { cursor:not-allowed; }
   </style><section>
-    <h2>Cautious Review <small>0.2.0 preview</small></h2>
-    <p><strong>Local queue only.</strong> Nothing is sent to Greenhouse.</p>
+    <h2>Cautious Review <small>0.3.0 preview</small></h2>
+    <p><strong>Local review queue.</strong> Execute reviewed decisions in Live Review.</p><button id="open-live">Open Live Review & résumé retrieval</button>
     <label><input type="checkbox" id="enabled"> Enable keyboard review on this page</label>
     <small>Alt+A advance · Alt+M maybe · Alt+R reject · Alt+U undo · Alt+J/K navigation</small>
     <div class="row"><button id="advance">Queue advance</button><button id="maybe">Queue maybe</button><button id="reject">Queue reject</button><button id="undo">Undo current</button></div>
@@ -37,6 +37,41 @@
   const reason = $<HTMLSelectElement>("#reason"), enabled = $<HTMLInputElement>("#enabled");
   const reasons = ["Required skills not demonstrated", "Relevant work not demonstrated", "Role scope mismatch", "Seniority mismatch", "Explicit on-site answer mismatch", "Explicit sponsorship answer mismatch", "Other — reviewer reason"];
   for (const label of reasons) { const opt = document.createElement("option"); opt.textContent = label; opt.value = label; reason.append(opt); }
+  function ownedFacts() {
+    const facts:Record<string,string>[]=[];
+    // Only Greenhouse action forms and selected navigation. Never scan résumé HTML,
+    // arbitrary JSON, window globals, or applicant prose for identifier-like numbers.
+    for(const form of document.querySelectorAll<HTMLFormElement>('form[action]')) {
+      const action=new URL(form.action,location.href);
+      const match=action.pathname.match(/^\/applications\/([1-9]\d*)\/(reject|advance|move|unreject)\/?$/);
+      if(action.origin!==location.origin||!match||form.closest('[data-testid="resume"],.resume,[contenteditable],iframe'))continue;
+      const fact:Record<string,string>={applicationId:match[1]};
+      for(const [name,key] of [['candidate_id','candidateId'],['job_id','jobId'],['from_stage_id','stageId']]) {
+        const fields=form.querySelectorAll<HTMLInputElement>(`input[type="hidden"][name="${name}"]`);
+        for(const field of fields)facts.push({[key]:field.value});
+      }
+      facts.push(fact);
+    }
+    for(const a of document.querySelectorAll<HTMLAnchorElement>('nav a[aria-current="page"][href]')) {
+      const u=new URL(a.href,location.href);if(u.origin!==location.origin)continue;
+      const m=u.pathname.match(/^\/(people|candidates|applications)\/([1-9]\d*)(?:\/|$)/);
+      if(m)facts.push({[m[1]==='applications'?'applicationId':'candidateId']:m[2]});
+      for(const name of ['application_id','job_application_id'])for(const id of u.searchParams.getAll(name))facts.push({applicationId:id});
+    }
+    return facts;
+  }
+  $("#open-live").addEventListener("click", e => {
+    if (!e.isTrusted) return;
+    void (async () => {
+      try {
+        const response = await chrome.runtime.sendMessage({ type: 'open-live', facts: ownedFacts() });
+        if (!response?.ok) status(response?.error ?? "Could not open Live Review. Reload this page and try again.");
+        else status("Live Review opened. Confirm the selected application there before any action.");
+      } catch {
+        status("Could not contact the extension. Reload this page and try again.");
+      }
+    })();
+  });
   let currentUrl = location.href, busy = false, generation = 0;
   function status(message: string) { $("#status").textContent = message; }
   async function send(type: string, data: Record<string, unknown> = {}) {
@@ -132,7 +167,7 @@
     try {
       const context = await send("context"); host.hidden = false;
       status(context.applicationId ? `Application ${context.applicationId}. Local-only preview.` : "Candidate page only: open a specific job application to queue decisions.");
-    } catch { host.hidden = true; enabled.checked = false; }
+    } catch { host.hidden = !/^\/(?:applications\/review|plans\/[^/]+\/candidates)(?:\/|$)/.test(location.pathname); enabled.checked = false; status("Open Live Review to resolve the application and retrieve its résumé. Ambiguous page identity cannot queue decisions."); }
   }
   // Route polling never scrapes or indexes text. No mutation-observer write loop.
   setInterval(() => {

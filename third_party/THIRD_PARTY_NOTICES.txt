@@ -1,17 +1,26 @@
 Cautious Review third-party notices
 ===================================
 
-open-greenhouse-mcp
--------------------
-Cautious Review's reviewed batch-execution accounting in `src/batch.ts` is
-adapted from the sequential bulk-operation pattern in:
-
-  https://github.com/benmonopoli/open-greenhouse-mcp
-  src/greenhouse_mcp/harvest/batch.py
-  source blob c0523a6881d82ccc739cd98b97fc69a47dea75d9
-
+open-greenhouse-mcp — MIT adaptations
+--------------------------------------
+Source repository: https://github.com/benmonopoli/open-greenhouse-mcp
+Pinned source commit: 966fb2f36877dd62b14e924b9a7e1983ef88d11f
 Copyright (c) 2026 Ben Monopoli
-Licensed under the MIT License:
+
+Adapted source files and exact source blob IDs are recorded in
+UPSTREAM.json. The sequential batch/result-accounting pattern in
+src/greenhouse_mcp/harvest/batch.py (blob
+c0523a6881d82ccc739cd98b97fc69a47dea75d9) is adapted in src/batch.ts.
+Additional 0.3.0 adaptations from client.py, harvest/applications.py,
+harvest/attachments.py, harvest/job_stages.py, and
+harvest/rejection_reasons.py are used in src/harvest.ts and src/identity.ts.
+The adaptations cover general request handling and Harvest lookup/action
+patterns. The upstream v1/v2 Basic-auth transport and request bodies are not
+used; the live adapter is rebuilt for Harvest v3 OAuth Bearer requests and
+v3 actions. Cautious Review adds its own identity checks, bounded/restricted
+transport, reviewed plans, durable intent/receipts, read-after-write
+reconciliation, and uncertain-write safeguards. The MIT license below applies
+to these adapted portions.
 
 MIT License
 
@@ -34,3 +43,30 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+Bundled browser libraries and model
+-----------------------------------
+PDF.js 5.4.624 — Mozilla Foundation; Apache-2.0. Bundled browser files are
+unmodified. Full license is shipped as vendor/PDFJS-LICENSE.txt.
+
+Transformers.js 3.8.1 — Hugging Face; Apache-2.0. Full license is shipped as
+vendor/TRANSFORMERS-LICENSE.txt.
+
+@huggingface/jinja 0.5.10 — Hugging Face; MIT. Included in the bundled
+Transformers.js browser module. Full license is shipped as
+vendor/JINJA-LICENSE.txt.
+
+ONNX Runtime Web 1.22.0-dev.20250409-89f8206ba4 — Microsoft; MIT. Full
+license and dependency notices are shipped as vendor/ONNX-LICENSE.txt and
+vendor/ONNX-ThirdPartyNotices.txt.
+
+Xenova/all-MiniLM-L6-v2, revision
+751bff37182d3f1213fa05d7196b954e230abad9 — Apache-2.0 as declared in the
+pinned model metadata. The quantized ONNX file and tokenizer assets are
+unmodified. The official Apache-2.0 license text is shipped as
+models/minilm/LICENSE from MiniLM-LICENSE.txt (official text:
+https://www.apache.org/licenses/LICENSE-2.0.txt); model revision, file URLs,
+and SHA-256 values are in MODEL.json. The base model-card snapshot is retained
+in MiniLM-BASE-CARD.md.
+
+No proprietary GreenMaxing code is copied or redistributed.

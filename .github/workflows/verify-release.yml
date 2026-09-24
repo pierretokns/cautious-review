@@ -27,6 +27,7 @@ jobs:
           node-version: '22.16.0'
           cache: npm
       - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: npm run models
       - if: matrix.check == 'unit'
         run: npm test
       - if: matrix.check == 'browser'
@@ -39,12 +40,14 @@ jobs:
         run: uv run --with playwright==1.57.0 playwright install --with-deps chromium
       - if: matrix.check == 'browser'
         name: Synthetic browser workflow
-        run: uv run --with playwright==1.57.0 python tests/browser_smoke.py
+        run: |
+          uv run --with playwright==1.57.0 python tests/browser_smoke.py
+          uv run --with playwright==1.57.0 python tests/browser_live.py
       - if: matrix.check == 'browser' && success()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: synthetic-browser-preview
-          path: artifacts/browser-preview.png
+          path: artifacts/*preview.png
           retention-days: 14
   package:
     runs-on: ubuntu-24.04
@@ -58,6 +61,7 @@ jobs:
           node-version: '22.16.0'
           cache: npm
       - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: npm run models
       - run: npm test && npm run package
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
@@ -66,6 +70,7 @@ jobs:
           path: |
             artifacts/*.zip
             artifacts/*.crx
+            artifacts/*.mjs
             artifacts/BUILD.json
             artifacts/SHA256SUMS
           retention-days: 14
@@ -89,12 +94,12 @@ jobs:
           COMMIT: ${{ github.sha }}
         run: |
           tag="preview-${COMMIT:0:12}"
-          notes='Passed TypeScript, unit tests and synthetic browser-fixture gates. ZIP: extract and Load unpacked in Chrome. CRX: cryptographically verified self-signed preview, not Web Store signed; its ephemeral identity is not an upgrade channel. Use ZIP on ordinary Mac/Windows Chrome. 0.2.1 adds documented app2-app5 Greenhouse hosts and moves Cautious Review actions behind Alt chords so Greenhouse native shortcuts remain untouched. Local evidence review, alias search, bulk text import, clean reading, audit export. No live Greenhouse writes, automatic PDF extraction or neural embeddings. Public fixtures are synthetic.'
+          notes='0.3.0 Harvest v3 live-testing preview: explicit human-confirmed reject, advance, same-job move and unreject; verified identity, refreshed previews, durable intent/receipts, read-after-write checks and no blind write retries. A separate cautious-review-token.mjs helper mints a short-lived OAuth token; the client secret never enters the extension. Requires v3 endpoint permissions and a Site Admin user for list calls. Automatic PDF/text resume extraction and bundled offline MiniLM hybrid retrieval. Passed unit and synthetic browser fixtures, including local WASM inference. NOT validated end-to-end against a real Greenhouse account. ZIP: extract and Load unpacked. CRX is a verified self-signed preview, NOT Web Store signed, with ephemeral identity and no update continuity.'
           if gh release view "$tag" >/dev/null 2>&1; then
             echo "Commit-specific release already exists; refusing to replace verified bytes."
           else
-            gh release create "$tag" artifacts/*.zip artifacts/*.crx artifacts/SHA256SUMS artifacts/BUILD.json \
-              --target "$COMMIT" --prerelease --title "Cautious Review 0.2.1 preview ${COMMIT:0:12}" --notes "$notes"
+            gh release create "$tag" artifacts/*.zip artifacts/*.crx artifacts/*.mjs artifacts/SHA256SUMS artifacts/BUILD.json \
+              --target "$COMMIT" --prerelease --title "Cautious Review 0.3.0 preview ${COMMIT:0:12}" --notes "$notes"
           fi
   audit-greenmaxing:
     if: github.event_name != 'pull_request'

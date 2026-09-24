@@ -1,15 +1,19 @@
-# Architecture — 0.1.1 preview
+# Architecture — 0.3.0 preview
 
-Greenhouse remains the system of record. A classic content script displays a shadow-DOM toolbar. Explicit actions are sent through validated extension runtime messages to an ES-module service worker. The worker owns IndexedDB, search, local decisions and transactional undo history.
+Cautious Review is a Chrome extension with two surfaces. The Greenhouse content script provides a local review queue and evidence view. The extension's Live Review page owns Harvest connection state, résumé retrieval and extraction, local hybrid search, reviewed action plans, and live action receipts. Greenhouse remains the system of record.
 
-Unlike the initial skeleton, the content script never opens IndexedDB, indexes the entire page, uses an arbitrary pathname as a candidate ID, or indexes on every DOM mutation. Candidate-only pages cannot queue application dispositions. Unknown and conflicting URL identifiers fail closed.
+The extension uses Harvest v3 Bearer authentication. A separate local Node helper creates a short-lived access token from a Harvest V3 OAuth client ID and client secret, with a numeric Greenhouse user ID as `sub`. The client secret stays in the terminal helper and never enters the extension. The token exists in the Live Review page's memory for the connection lifetime. The selected user must have the permissions required by the configured endpoints; Greenhouse requires a Site Admin authorizing user for list endpoints. The helper alone contacts `auth.greenhouse.io`; the extension uses the fixed Harvest API origin and approved Greenhouse document-storage hosts. Reads are bounded and paginated with cycle/limit checks. PDF.js and the MiniLM assets are bundled; PDF parsing and q8 model inference run locally without a worker/model CDN or hosted inference service.
 
-The build uses TypeScript directly: classic content.js plus ES-module background/core/storage. The old Vite configuration, substring search and page-origin storage are removed. This is source/build simplification, not a change to the local-first design.
+Application identity is resolved from explicit route parameters or supported page facts and then checked against Harvest v3. Applications, candidates, current application stages, job interview stages, résumé attachments, users, jobs, and rejection reasons are fetched through their v3 endpoint families. Numeric path fragments on Greenhouse review routes are not guessed to be application IDs. Ambiguous identity, multi-job applications, unsupported states, and unclear stage order fail closed. A move target must belong to the application's current job.
 
-## Shipping loop
+Each action is individually queued and refreshed into a short-lived plan. The reviewer confirms the displayed plan and exact count. Execution rechecks the application and action details before every sequential write. A `started` receipt is committed before a write. Harvest v3 action endpoints return `204 No Content`, so the extension rereads the application and relevant stage or rejection details to reconcile the result. Unknown outcomes are retained for manual reconciliation and block replay. Cancellation stops later actions; it does not roll back a completed request.
 
-A push starts tests immediately. A successful main-branch run publishes a commit-specific preview ZIP and checksum. Publication requires the independent browser fixture job to pass; no release is claimed merely because a workflow file exists. CI creates no coding-agent loop and needs no inference-provider credentials.
+Résumé text, local review queues, and their audit entries use extension-origin IndexedDB with seven-day cleanup. Live receipts use a separate extension-origin store and persist until explicitly cleared. Neither database is application-encrypted. Local lexical/alias search works without the model; hybrid retrieval combines lexical ranking and bundled MiniLM passage similarity. Search returns evidence passages and does not make employment decisions.
 
-## Next increments
+Harvest v1/v2 endpoints ended on August 31, 2026; the live adapter uses v3. See Greenhouse's [authentication guide](https://harvestdocs.greenhouse.io/docs/authentication) and [migration guide](https://harvestdocs.greenhouse.io/docs/step-by-step-migration-instructions) for credential setup and endpoint changes.
 
-Real Greenhouse DOM/application identification fixtures; account-scoped storage; approved Harvest/session action adapter with preview, permissions and retry safety; PDF.js local parsing; tiny local embeddings behind a narrow interface; evidence-backed job criteria; readability diagnostics separate from capability; full audit export. No autonomous employment disposition.
+The build compiles the extension, copies local browser dependencies and model files, checks the expected package inventory and pinned model hashes, then creates the ZIP and preview CRX. A separate OAuth token helper is shipped alongside those extension artifacts. The CRX is self-signed and uses an ephemeral identity by default. See [release 0.3.0](RELEASE-0.3.0.md) and [build status](BUILD-STATUS.md) for verification limits.
+
+## Earlier design
+
+The 0.1/0.2 architecture introduced the shadow-DOM toolbar, local evidence rules, local queues, explicit source passages, local exports, and guarded keyboard review. Those release notes remain historical; their statements that live adapters, PDF extraction, or neural embeddings were unfinished were true at that time and are superseded by the 0.3.0 notes.

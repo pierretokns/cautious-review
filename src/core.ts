@@ -4,20 +4,36 @@ export interface Context { key: string; origin: string; candidateId?: string; ap
 export interface CandidateDocument extends Context { name: string; text: string; indexedAt: string }
 export interface ReviewRecord extends Context { decision: Decision; reason?: string; createdAt: string }
 
+function uniqueIds(values: string[]): string[] | null {
+  if (values.some(v => !/^[1-9]\d*$/.test(v))) return null;
+  const unique = [...new Set(values)];
+  return unique.length > 1 ? null : unique;
+}
+
 /** Geographic biography is intentionally NOT used to infer authorization or fit. */
 export function contextFor(value: string): Context | null {
   let u: URL;
   try { u = new URL(value); } catch { return null; }
   if (u.protocol !== "https:" || !HOSTS.has(u.hostname) || u.port || u.username || u.password) return null;
-  const match = u.pathname.match(/^\/(people|candidates|applications)\/([1-9]\d*)(?:\/|$)/);
-  if (!match) return null;
-  const ids = ["job_application_id", "application_id"].flatMap(k => u.searchParams.getAll(k));
-  if (ids.some(v => !/^[1-9]\d*$/.test(v)) || new Set(ids).size > 1) return null;
-  const candidateId = match[1] === "applications" ? undefined : match[2];
-  const applicationId = match[1] === "applications" ? match[2] : ids[0];
-  if (match[1] === "applications" && ids.length && ids[0] !== applicationId) return null;
+  const record = u.pathname.match(/^\/(people|candidates)\/([1-9]\d*)(?:\/|$)/);
+  const application = u.pathname.match(/^\/applications\/([1-9]\d*)(?:\/|$)/);
+  const review = /^\/applications\/review(?:\/[^/]+)*(?:\/)?$/.test(u.pathname);
+  const planCandidates = /^\/plans\/[^/]+\/candidates(?:\/[^/]+)*(?:\/)?$/.test(u.pathname);
+  if (!record && !application && !review && !planCandidates) return null;
+
+  const applicationIds = uniqueIds(["job_application_id", "application_id"].flatMap(k => u.searchParams.getAll(k)));
+  const candidateIds = uniqueIds(["candidate_id", "person_id"].flatMap(k => u.searchParams.getAll(k)));
+  if (!applicationIds || !candidateIds) return null;
+  const pathCandidate = record?.[2];
+  const pathApplication = application?.[1];
+  if ((pathCandidate && !uniqueIds([pathCandidate])) || (pathApplication && !uniqueIds([pathApplication]))) return null;
+  if (pathCandidate && candidateIds.length && candidateIds[0] !== pathCandidate) return null;
+  if (pathApplication && applicationIds.length && applicationIds[0] !== pathApplication) return null;
+  const candidateId = pathCandidate ?? candidateIds[0];
+  const applicationId = pathApplication ?? applicationIds[0];
+  if (!applicationId && !candidateId) return null;
   const key = `${u.origin}|${applicationId ? `application:${applicationId}` : `candidate:${candidateId}`}`;
-  const url = new URL(`/${match[1]}/${match[2]}`, u.origin);
+  const url = new URL(pathCandidate ? `/${record![1]}/${pathCandidate}` : pathApplication ? `/applications/${pathApplication}` : u.pathname, u.origin);
   if (candidateId && applicationId) url.searchParams.set("job_application_id", applicationId);
   return { key, origin: u.origin, candidateId, applicationId, url: url.href };
 }

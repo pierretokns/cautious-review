@@ -1,10 +1,19 @@
+import {routeIdentity} from './identity.js';
 import { contextFor, search, validateDecision } from './core.js';
 import { clear, decide, documents, purgeExpired, reviews, saveDocument, saveDocumentsAtomic, auditEntries, undo } from './storage.js';
 import { assess, conceptSearch, diagnostics, ENGINE_VERSION, validateImport } from './evidence.js';
 let serial: Promise<unknown> = Promise.resolve();
-// No fetch, cloud endpoints, external messaging, or Greenhouse writes in this preview.
+// Content scripts cannot access Harvest credentials or invoke live mutations.
 chrome.runtime.onMessage.addListener((message, sender, respond) => {
  if (sender.id !== chrome.runtime.id || sender.frameId !== 0 || !sender.tab) return false;
+ if(message?.type === 'open-live') {
+  void (async()=>{try { const u=new URL(sender.url??'');
+   const facts=Array.isArray(message.facts)?message.facts.filter((v:unknown)=>!!v&&typeof v==='object'&&!Array.isArray(v)):[];
+   const hints=routeIdentity(u.href,facts);
+   for(const [key,name] of [['applicationId','application_id'],['candidateId','candidate_id'],['jobId','job_id'],['stageId','stage_id']] as const) if(hints[key])u.searchParams.set(name,hints[key]!);
+   await chrome.tabs.create({url:chrome.runtime.getURL('live.html')+'?source='+encodeURIComponent(u.href)});respond({ok:true});
+  }catch(error){respond({ok:false,error:error instanceof Error?error.message:'Could not open Live Review'});}})();return true;
+ }
  const context = contextFor(sender.url ?? ''), requested = contextFor(message?.url ?? '');
  if (!context || !requested || context.key !== requested.key) { respond({ ok: false, error: 'Candidate/application context unavailable or changed' }); return false; }
  serial = serial.catch(() => undefined).then(async () => {
@@ -33,7 +42,7 @@ chrome.runtime.onMessage.addListener((message, sender, respond) => {
     return { engineVersion: ENGINE_VERSION, application: context, sourceSha256: [...new Uint8Array(hash)].map(b => b.toString(16).padStart(2, '0')).join(''), analyzedAt: new Date().toISOString(), criteria, diagnostics: diagnostics(doc.text) };
    }
    case 'import': { const batch = validateImport(message.records, context.origin); await saveDocumentsAtomic(batch); return { imported: batch.length }; }
-   case 'export': return { schemaVersion: 1, extensionVersion: '0.2.1', exportedAt: new Date().toISOString(), origin: context.origin, mode: 'local-review-only', greenhouseWrites: 0, reviews: await reviews(context.origin), audit: await auditEntries(context.origin) };
+   case 'export': return { schemaVersion: 1, extensionVersion: '0.3.0', exportedAt: new Date().toISOString(), origin: context.origin, mode: 'local-review-only', greenhouseWrites: 0, reviews: await reviews(context.origin), audit: await auditEntries(context.origin) };
    case 'clear': await clear(); return { cleared: true };
    default: throw Error('Unsupported message');
   }

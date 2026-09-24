@@ -1,15 +1,15 @@
 # Employment decision safeguards
 
-Cautious Review is designed to assist a human reviewer, not make autonomous employment decisions.
+Cautious Review supports a human reviewer. It does not infer or make an employment disposition. Retrieval finds passages for review; the reviewer decides what they mean and chooses any action.
 
-## Rules
-- Retrieval similarity is not a qualification score.
-- Every inferred job-fit signal should be traceable to source evidence.
-- Distinguish **found**, **not found**, **contradicted**, and **unknown**.
-- Absence from a resume is not automatically evidence that a person lacks a skill.
-- Do not infer protected characteristics.
-- Work-authorization handling should preserve the exact Greenhouse question and answer. Do not silently convert geography, names, schools, or employers into citizenship/visa status.
-- Reviewer decisions are queued locally before any bulk write.
-- Keep an audit trail of evidence shown, reviewer action, reason, model/version metadata, and resulting Greenhouse action.
+## Review and action rules
 
-Document/readability diagnostics (font size, density, excessive formatting, repeated keyword stuffing) should be shown separately from evidence of job capability.
+- Similarity, keyword coverage, and aliases are retrieval aids, not qualification or rejection scores.
+- Evidence views preserve source passages. Distinguish a mention, a self-reported work claim, a possible negation or conflict, and an unknown. Absence from a résumé does not establish that a candidate lacks a skill.
+- Do not infer protected characteristics. Preserve exact work-authorization questions and answers; do not convert names, geography, schools, or employers into citizenship or visa status.
+- Keep document readability and formatting observations separate from evidence of job capability. They must not change a disposition.
+- A human chooses each Greenhouse action, rejection reason, and destination stage. Plans display the resolved application, current state, acting user, and proposed action; execution requires review and exact-count confirmation.
+- Moves are limited to stages in the same job. Advance uses the next unambiguous ordered stage. No rejection email is requested, though Greenhouse may apply organization-configured automations.
+- Writes are sequential and have a durable intent receipt before sending. An unknown result stops execution and requires reconciliation in Greenhouse. It must not be replayed automatically. Unreject is a separate reviewed action and does not reverse other side effects.
+
+These safeguards do not establish that the workflow is validated for production hiring. Browser fixtures are synthetic; no real Greenhouse account end-to-end validation is claimed.

@@ -3,11 +3,18 @@ import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { createCrx, verifyCrx } from './crx.mjs';
 const manifest = JSON.parse(readFileSync('dist/manifest.json', 'utf8'));
-if (manifest.manifest_version !== 3 || manifest.host_permissions?.length || manifest.permissions?.length) throw Error('Unexpected manifest permissions');
-if(manifest.content_security_policy?.extension_pages!=="script-src 'self'; object-src 'none'; connect-src 'none'")throw Error('Unexpected CSP');
-const expected=['THIRD_PARTY_NOTICES.txt','assist.js','batch.js','background.js','content.js','core.js','evidence.js','storage.js','manifest.json'].sort();
-const actual=readdirSync('dist').sort();if(JSON.stringify(actual)!==JSON.stringify(expected))throw Error(`Unexpected/missing dist files: ${actual}`);
-for(const name of actual.filter(f=>f.endsWith('.js'))){const body=readFileSync(`dist/${name}`,'utf8');if(/\b(?:fetch|XMLHttpRequest|WebSocket|sendBeacon|importScripts)\s*\(/.test(body)||/\beval\s*\(/.test(body))throw Error(`Unexpected network/eval code: ${name}`);}
+const allowedHosts=['https://harvest.greenhouse.io/*','https://grnhse-dochouse-prod.s3.amazonaws.com/*','https://grnhse-dochouse-prod.s3.us-east-1.amazonaws.com/*','https://grnhse-dochouse-prod-eu.s3.eu-central-1.amazonaws.com/*'];
+if(manifest.manifest_version!==3 || manifest.permissions?.length || JSON.stringify(manifest.host_permissions)!==JSON.stringify(allowedHosts))throw Error('Unexpected manifest permissions');
+const csp="script-src 'self' 'wasm-unsafe-eval'; object-src 'none'; connect-src 'self' "+allowedHosts.map(h=>h.slice(0,-2)).join(' ');
+if(manifest.content_security_policy?.extension_pages!==csp)throw Error('Unexpected CSP');
+const walk=(dir,prefix='')=>readdirSync(dir,{withFileTypes:true}).flatMap(f=>f.isDirectory()?walk(dir+'/'+f.name,prefix+f.name+'/'):[prefix+f.name]);
+const actual=walk('dist').sort();
+const expected=['THIRD_PARTY_NOTICES.txt','assist.js','batch.js','background.js','content.js','core.js','evidence.js','storage.js','manifest.json','harvest.js','identity.js','live-store.js','live.js','pdf.js','semantic.js','live.html','live.css','launcher.html',
+'vendor/pdf.mjs','vendor/pdf.worker.mjs','vendor/PDFJS-LICENSE.txt','vendor/transformers.min.js','vendor/ort-wasm-simd-threaded.jsep.mjs','vendor/ort-wasm-simd-threaded.jsep.wasm','vendor/TRANSFORMERS-LICENSE.txt','vendor/JINJA-LICENSE.txt','vendor/ONNX-LICENSE.txt','vendor/ONNX-ThirdPartyNotices.txt','models/minilm/LICENSE',
+...JSON.parse(readFileSync('third_party/MODEL.json','utf8')).files.map(f=>'models/minilm/'+f.path)].sort();
+if(JSON.stringify(actual)!==JSON.stringify(expected))throw Error('Unexpected/missing dist files: '+actual);
+for(const f of JSON.parse(readFileSync('third_party/MODEL.json','utf8')).files)if(createHash('sha256').update(readFileSync('dist/models/minilm/'+f.path)).digest('hex')!==f.sha256)throw Error('Model checksum mismatch');
+if(!readFileSync('dist/models/minilm/LICENSE').equals(readFileSync('third_party/MiniLM-LICENSE.txt')))throw Error('Model license does not match the recorded Apache-2.0 text');
 mkdirSync('artifacts',{recursive:true});
 const epoch=new Date('2026-01-01T00:00:00Z');for(const name of actual)utimesSync(`dist/${name}`,epoch,epoch);
 const asset=`cautious-review-${manifest.version}.zip`,crxAsset=`cautious-review-${manifest.version}-preview.crx`;
@@ -17,7 +24,9 @@ execFileSync('unzip',['-t',`artifacts/${asset}`],{stdio:'inherit'});
 const zip=readFileSync(`artifacts/${asset}`),crx=createCrx(zip,process.env.CRX_SIGNING_KEY);
 writeFileSync(`artifacts/${crxAsset}`,crx.bytes);
 if(!verifyCrx(readFileSync(`artifacts/${crxAsset}`),crx.extensionId).zip.equals(zip))throw Error('CRX/ZIP mismatch');
+const helper='cautious-review-token.mjs';
+writeFileSync(`artifacts/${helper}`,readFileSync('scripts/harvest-token.mjs'));
 const hash=b=>createHash('sha256').update(b).digest('hex');
-writeFileSync('artifacts/BUILD.json',JSON.stringify({version:manifest.version,commit:process.env.GITHUB_SHA??'local',zipSha256:hash(zip),crxSha256:hash(crx.bytes),crxExtensionId:crx.extensionId,crxSigning:crx.signingMode,install:'ZIP: extract then Load unpacked. CRX: self-signed preview, not Web Store signed. Ephemeral CRX IDs change each build; no automatic upgrade continuity.',verification:'TypeScript, unit tests, container signatures and exact payload comparison. Browser fixtures are a separate CI release gate. Live Greenhouse writes are not implemented.'},null,2)+'\n');
-writeFileSync('artifacts/SHA256SUMS',[asset,crxAsset,'BUILD.json'].map(name=>`${hash(readFileSync(`artifacts/${name}`))}  ${name}\n`).join(''));
+writeFileSync('artifacts/BUILD.json',JSON.stringify({version:manifest.version,commit:process.env.GITHUB_SHA??'local',zipSha256:hash(zip),crxSha256:hash(crx.bytes),crxExtensionId:crx.extensionId,crxSigning:crx.signingMode,install:'ZIP: extract then Load unpacked. CRX: self-signed preview, not Web Store signed. Ephemeral CRX IDs change each build; no automatic upgrade continuity.',verification:'TypeScript, unit tests, container signatures and exact payload comparison. Browser fixtures are a separate CI release gate. Live Harvest writes are human-confirmed. Real Greenhouse end-to-end validation has NOT been performed. Offline PDF and WASM inference are exercised in synthetic browser tests.'},null,2)+'\n');
+writeFileSync('artifacts/SHA256SUMS',[asset,crxAsset,helper,'BUILD.json'].map(name=>`${hash(readFileSync(`artifacts/${name}`))}  ${name}\n`).join(''));
 console.log(`Packaged ZIP and verified CRX3: ${crx.extensionId} (${crx.signingMode}). No private key written to disk.`);

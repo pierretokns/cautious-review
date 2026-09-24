@@ -1,50 +1,56 @@
 # Cautious Review
 
-Local-first, keyboard-first Greenhouse review. **0.2.1 is a local evidence/queue preview, not a complete ATS replacement. It does not execute live Greenhouse rejections.**
+**0.3.0 live-testing preview** for local résumé evidence review and explicit, human-confirmed Greenhouse Harvest actions. Greenhouse remains the system of record. A reviewer chooses each decision and confirms the complete plan before any write is sent.
 
-## Download and test — no npm needed
+## Install
 
-Get the ZIP from the [newest successful preview release](https://github.com/pierretokns/cautious-review/releases). Every new release is gated on unit, browser-fixture and artifact checks. The older checked-in 0.1.1 ZIP remains an archived preview; prefer Releases.
+Use desktop Chrome 120 or later. Extract the preview ZIP, open `chrome://extensions`, enable Developer mode, choose **Load unpacked**, and select the extracted folder containing `manifest.json`. Reload Greenhouse after installing or updating. Corporate browser policy may restrict unpacked installations.
 
-Extract the ZIP. Open `chrome://extensions` in desktop Chrome, enable Developer mode, choose **Load unpacked**, select the folder containing `manifest.json`, and reload a Greenhouse application page. Corporate browser policy may restrict unpacked installations.
+The optional CRX is self-signed, not Web Store signed. Its signing identity is ephemeral and changes between builds, so it has no stable update channel. The ZIP/unpacked path is the ordinary preview install. Release artifacts should include `BUILD.json` and `SHA256SUMS`; use the values attached to the exact artifact being installed.
 
-A genuine signed CRX3 is also attached, but it is a **self-signed preview**, not Web Store signed. Its ephemeral signing identity changes each build and does not provide an update channel. Ordinary Mac/Windows users should use the ZIP/unpacked path. `SHA256SUMS` and `BUILD.json` describe the exact artifacts.
+## Local review
 
-## What works
+The extension overlay can queue local advance, maybe, and reject decisions while reviewing a Greenhouse page. It does not write to Greenhouse. The Live Review page is opened from the extension toolbar or overlay and can load applications from Harvest, discover résumé attachments, and retrieve a selected résumé. PDF and UTF-8 text extraction happen in the extension page locally. Scanned PDFs need OCR outside this preview or pasted text.
 
-Opt-in keyboard review now uses **Alt chords only**: Alt+A advance, Alt+M maybe, Alt+R reject, Alt+U undo, Alt+J/K guarded navigation, and Alt+1–7 rejection reasons. This deliberately leaves Greenhouse's own unmodified R/M/X, 1–5, arrows, S/Y/N/D and other native shortcuts untouched. Typing in forms/contenteditable fields still cannot trigger Cautious Review actions.
+Résumé text, local decisions, and their local audit entries are stored in extension-origin IndexedDB. They expire after seven days when cleanup next runs. Live action receipts use a separate local store and persist until cleared. Use **Clear all local data** or a separate Chrome profile when switching Greenhouse accounts on the same origin. Browser history clearing does not reliably clear extension storage. IndexedDB is not application-encrypted.
 
-The extension explicitly supports Greenhouse Recruiting on `app.greenhouse.io`, `app2.greenhouse.io`, `app3.greenhouse.io`, `app4.greenhouse.io`, `app5.greenhouse.io`, and `app.eu.greenhouse.io`. Custom SSO subdomains are not granted broad wildcard access yet; see issue #6.
+Local analysis shows source passages, mentions versus self-reported work claims, possible negations, and unknowns. Alias and lexical matching is available without a model. Hybrid retrieval can also use the bundled, quantized MiniLM model through local WASM in the browser. It does not use Chrome's built-in AI or a cloud fallback. Retrieval similarity is not a qualification score or a disposition recommendation. Document readability diagnostics remain separate from capability evidence.
 
-Index selected/pasted résumé text or import a JSON array of `{url, name, text}` records (up to 1,000 / 5 MB). Imports validate completely before any writes and cannot queue dispositions.
+## Live Harvest actions
 
-Local search adds explicit skill aliases, with source passages and query-term coverage. **It is not yet neural embedding search.** Repeating keywords cannot increase coverage.
+Harvest v1/v2 endpoints ended on August 31, 2026; this preview uses Harvest v3. In Greenhouse API Credentials, create a **Harvest V3 (OAuth)** credential and select only the needed endpoint permissions. All list endpoints require authorization by a Site Admin, so use an appropriate Site Admin user as the reviewer.
 
-Expand **Evidence, clean reading & bulk import**. Enter one criterion per line; `|` means alternatives. Analyze the indexed résumé to see exact quotations, mentions versus self-reported work claims, possible negations, and unknowns. Export reports with source SHA-256 and engine version.
+Greenhouse's guidance says to store client secrets server-side. This preview's standalone local helper keeps the secret out of the extension and terminal command line, but uses it on your computer to request a token; it is a local operator convenience, not a hosted credential broker. Download `cautious-review-token.mjs` with the preview release and run it with Node 22 or newer in an interactive terminal. It asks for the OAuth client ID, your numeric Greenhouse user ID, and the client secret (hidden while typing), then requests a short-lived bearer token from `auth.greenhouse.io`. It sends no candidate data and stores no credential or token. The helper asks before printing the token once so you can copy it.
 
-Readability diagnostics flag duplicate/long bullet lines and text-encoding problems separately from capability. Clean reading normalizes presentation. No AI-authorship score or font-size inference is made from plain text.
+Paste that token and the same user ID into Live Review. The token stays in the page's memory and is cleared from its input after connection; disconnect or close the page to discard it. It is not saved to extension storage or exposed to Greenhouse page scripts. When it expires, run the helper again and reconnect. The helper contacts the OAuth host; the extension itself uses only Harvest and approved Greenhouse résumé-storage hosts.
 
-Queue/audit export is local JSON, not execution. Data stays in extension-origin IndexedDB, with clear-all and seven-day expiry. No hosted model, runtime npm dependency, telemetry or network permission is required. Clear data or use a separate Chrome profile when switching organizations on the same Greenhouse origin.
+Select read permissions for users, jobs, applications, candidates, application stages, job interview stages, attachments, and rejection reasons. Enable application reject, move, and unreject write permissions only if you intend to use those actions. In v3 the advance action is a reviewed move to the next ordered stage.
 
-## Still missing
+Actions are reject, advance one ordered stage, move to a selected stage within the same job, and unreject. The interface prepares a refreshed preview with application identity, current state, target or reason, and the acting user. The reviewer must affirm the plan and type its application count. Before each write, the extension checks that application state and plan details still match. Requests run sequentially. Harvest v3 writes return no response body, so Cautious Review rereads the application and related stage or rejection details to confirm the result. No rejection email is requested, though Greenhouse may run organization-configured automations.
 
-The highest-priority compatibility gap is Greenhouse's actual `/applications/review/*` workflow and custom SSO subdomains. Cautious Review currently fails closed there rather than guessing identity from arbitrary DOM. Live Greenhouse write/authentication adapter, automatic résumé/PDF extraction, neural embeddings, automatic tenant isolation, permanent evidence-to-decision audit binding and validation against a real Greenhouse account also remain unfinished. The tested bulk library is deliberately not wired to unverified live endpoints.
+The extension saves a durable `started` receipt before sending each write. It never blindly retries an uncertain write. Unknown outcomes stop the plan and require reconciliation in Greenhouse; they must not be replayed automatically. Cancellation stops between requests and cannot undo one already sent. Unreject is a separate action and does not reverse emails, interviews, or other side effects. Receipts remain local until cleared and can be exported. See Greenhouse's [authentication guide](https://harvestdocs.greenhouse.io/docs/authentication) and [v1/v2-to-v3 migration guide](https://harvestdocs.greenhouse.io/docs/step-by-step-migration-instructions).
 
-[0.2.0 evidence-engine release notes](docs/RELEASE-0.2.0.md) · [Verified prior art and licenses](docs/PRIOR-ART.md) · [Verification record](docs/BUILD-STATUS.md) · [Greenhouse adapter issue](https://github.com/pierretokns/cautious-review/issues/6)
+## Limits and validation
+
+Greenhouse identity and action behavior have not been validated end-to-end against a real Greenhouse account. Automated browser fixtures use synthetic applications and documents; they are not real-account or production hiring validation. See [0.3.0 release notes](docs/RELEASE-0.3.0.md) and the [verification record](docs/BUILD-STATUS.md) for the preview's validation scope.
+
+Only the listed Greenhouse application hosts are supported: `app.greenhouse.io`, `app2.greenhouse.io`, `app3.greenhouse.io`, `app4.greenhouse.io`, `app5.greenhouse.io`, and `app.eu.greenhouse.io`. Custom SSO subdomains are not included. Candidate data stays local by default, but the Live Review page intentionally sends authorized Harvest requests and résumé downloads to Greenhouse's approved storage hosts.
+
+The upstream MCP server's server, prompt, and unrelated MCP tool features are outside this extension's scope. No proprietary GreenMaxing code is copied. Third-party source and model records are in [`third_party/`](third_party/THIRD_PARTY_NOTICES.txt), [`docs/PRIOR-ART.md`](docs/PRIOR-ART.md), and the pinned metadata files.
 
 ## Develop
 
 ```sh
 npm ci --ignore-scripts
+npm run models
 npm test
 npm run package
 uv run --with playwright==1.57.0 playwright install chromium
 uv run --with playwright==1.57.0 python tests/browser_smoke.py
+uv run --with playwright==1.57.0 python tests/browser_live.py
 npm run audit:greenmaxing -- --download
 ```
 
-Node 22+, TypeScript 5.8.3 and OS zip/unzip are required. Browser fixtures use synthetic loopback pages and a temporary test-only extension copy; production host guards remain unchanged.
+Node 22+, TypeScript 5.8.3, and OS zip/unzip are required. The browser fixtures use synthetic records and local pages. Their success does not establish real Greenhouse integration or production hiring behavior. Do not commit real applicant documents, exports, credentials, signing keys, or browser profiles to this public repository.
 
-CI fans out unit tests, browser tests, packaging and isolated third-party static inspection on each push. Publication uses the exact verified package, without rebuilding it. CI is **not** an autonomous coding agent; the separately configured ChatGPT task supplies recurring development work.
-
-Do not commit real applicant documents, exports, credentials, signing keys or browser profiles to this public repository.
+Earlier preview history and evidence-engine behavior are recorded in [0.2.0 release notes](docs/RELEASE-0.2.0.md). See [employment safeguards](docs/EMPLOYMENT-SAFETY.md), [privacy notes](docs/PRIVACY.md), [architecture](docs/ARCHITECTURE.md), and [verified prior art](docs/PRIOR-ART.md).

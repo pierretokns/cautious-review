@@ -1,0 +1,17 @@
+{
+  "repository": "https://github.com/benmonopoli/open-greenhouse-mcp",
+  "commit": "966fb2f36877dd62b14e924b9a7e1983ef88d11f",
+  "license": "MIT",
+  "copyright": "Copyright (c) 2026 Ben Monopoli",
+  "adapted": {
+    "src/greenhouse_mcp/client.py": "d03a601cf12b11d9eb13737de64d9696b62e3a8c",
+    "src/greenhouse_mcp/harvest/applications.py": "339efe67cf5b202d4ca01c3cb85fa69689a61136",
+    "src/greenhouse_mcp/harvest/attachments.py": "95aa3c24f34328c31704fc20cbc59fa1b5e28bb1",
+    "src/greenhouse_mcp/harvest/batch.py": "c0523a6881d82ccc739cd98b97fc69a47dea75d9",
+    "src/greenhouse_mcp/harvest/job_stages.py": "bc593856bc22faf1dc286513757cb2a19faf85c5",
+    "src/greenhouse_mcp/harvest/rejection_reasons.py": "27625d9847527a86b945b068f25dcefcf2fc08a8"
+  },
+  "reviewed_not_copied": {
+    "src/greenhouse_mcp/resume_parser.py": "5fb37c5eb457499b118fc91c4169699fcb27ba19"
+  }
+}

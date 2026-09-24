@@ -1,8 +1,42 @@
 {
- "manifest_version":3,"name":"Cautious Review — local preview","version":"0.2.1",
- "description":"Keyboard review, source-linked evidence, readability diagnostics and an undoable local queue. No live Greenhouse writes.",
- "minimum_chrome_version":"120",
- "content_scripts":[{"matches":["https://app.greenhouse.io/*","https://app2.greenhouse.io/*","https://app3.greenhouse.io/*","https://app4.greenhouse.io/*","https://app5.greenhouse.io/*","https://app.eu.greenhouse.io/*"],"js":["content.js","assist.js"],"run_at":"document_idle","all_frames":false}],
- "background":{"service_worker":"background.js","type":"module"},
- "content_security_policy":{"extension_pages":"script-src 'self'; object-src 'none'; connect-src 'none'"}
+  "manifest_version": 3,
+  "name": "Cautious Review \u2014 local preview",
+  "version": "0.3.0",
+  "description": "Local r\u00e9sum\u00e9 evidence and explicit human-confirmed Greenhouse Harvest actions. Live-testing preview.",
+  "minimum_chrome_version": "120",
+  "content_scripts": [
+    {
+      "matches": [
+        "https://app.greenhouse.io/*",
+        "https://app2.greenhouse.io/*",
+        "https://app3.greenhouse.io/*",
+        "https://app4.greenhouse.io/*",
+        "https://app5.greenhouse.io/*",
+        "https://app.eu.greenhouse.io/*"
+      ],
+      "js": [
+        "content.js",
+        "assist.js"
+      ],
+      "run_at": "document_idle",
+      "all_frames": false
+    }
+  ],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'none'; connect-src 'self' https://harvest.greenhouse.io https://grnhse-dochouse-prod.s3.amazonaws.com https://grnhse-dochouse-prod.s3.us-east-1.amazonaws.com https://grnhse-dochouse-prod-eu.s3.eu-central-1.amazonaws.com"
+  },
+  "action": {
+    "default_title": "Open Cautious Review",
+    "default_popup": "launcher.html"
+  },
+  "host_permissions": [
+    "https://harvest.greenhouse.io/*",
+    "https://grnhse-dochouse-prod.s3.amazonaws.com/*",
+    "https://grnhse-dochouse-prod.s3.us-east-1.amazonaws.com/*",
+    "https://grnhse-dochouse-prod-eu.s3.eu-central-1.amazonaws.com/*"
+  ]
 }

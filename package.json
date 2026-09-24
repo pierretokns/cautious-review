@@ -1,1 +1,27 @@
-{"name":"cautious-review","version":"0.2.1","private":true,"type":"module","scripts":{"build":"node scripts/build.mjs","typecheck":"tsc --noEmit","test":"npm run build && node --test tests/*.test.mjs","package":"node scripts/package.mjs","audit:greenmaxing":"node scripts/audit-greenmaxing.mjs"},"devDependencies":{"typescript":"5.8.3"},"engines":{"node":">=22"}}
+{
+  "name": "cautious-review",
+  "version": "0.3.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "typecheck": "tsc --noEmit",
+    "test": "npm run build && node --test tests/*.test.mjs",
+    "package": "node scripts/package.mjs",
+    "audit:greenmaxing": "node scripts/audit-greenmaxing.mjs",
+    "models": "node scripts/models.mjs"
+  },
+  "devDependencies": {
+    "typescript": "5.8.3"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "@huggingface/transformers": "3.8.1",
+    "pdfjs-dist": "5.4.624"
+  },
+  "overrides": {
+    "sharp": "0.35.4"
+  }
+}

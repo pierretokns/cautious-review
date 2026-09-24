@@ -15,12 +15,12 @@
     #status { min-height:20px; } #results { max-height:220px;overflow:auto; } article { border-top:1px solid #dde3eb;padding:8px 0; }
     a { color:#16499a; } article p { white-space:pre-wrap; } details { margin-top:8px; } button:disabled { cursor:not-allowed; }
   </style><section>
-    <h2>Cautious Review <small>0.1.1 preview</small></h2>
+    <h2>Cautious Review <small>0.2.0 preview</small></h2>
     <p><strong>Local queue only.</strong> Nothing is sent to Greenhouse.</p>
     <label><input type="checkbox" id="enabled"> Enable keyboard review on this page</label>
-    <small>A advance · M maybe · R reject · U undo current · J/K navigation</small>
+    <small>Alt+A advance · Alt+M maybe · Alt+R reject · Alt+U undo · Alt+J/K navigation</small>
     <div class="row"><button id="advance">Queue advance</button><button id="maybe">Queue maybe</button><button id="reject">Queue reject</button><button id="undo">Undo current</button></div>
-    <label>Rejection reason (keys 1–7)<select id="reason"><option value="">Choose a reason</option></select></label>
+    <label>Rejection reason (Alt+1–7)<select id="reason"><option value="">Choose a reason</option></select></label>
     <div id="status" role="status" aria-live="polite">Open a specific job application to queue decisions.</div>
     <details><summary>Index résumé text locally</summary>
       <p>No automatic page scraping. Select résumé text on the page or paste it here. Embedded PDFs are not extracted in this preview.</p>
@@ -114,7 +114,8 @@
     location.assign(links[0].href);
   }
   document.addEventListener("keydown", e => {
-    if (!e.isTrusted || !enabled.checked || e.repeat || e.isComposing || e.altKey || e.ctrlKey || e.metaKey || e.shiftKey || e.defaultPrevented) return;
+    // Greenhouse has its own unmodified R/M/X/1–5/arrows shortcuts. Cautious Review only owns Alt chords.
+    if (!e.isTrusted || !enabled.checked || e.repeat || e.isComposing || !e.altKey || e.ctrlKey || e.metaKey || e.shiftKey || e.defaultPrevented) return;
     const path = e.composedPath();
     if (path.some(node => node instanceof HTMLElement && (node.isContentEditable || /^(INPUT|TEXTAREA|SELECT|BUTTON|A)$/.test(node.tagName) || node.getAttribute("role") === "textbox"))) return;
     if ([...document.querySelectorAll<HTMLElement>("[role='dialog'],dialog[open]")].some(el => el.getClientRects().length > 0)) return;

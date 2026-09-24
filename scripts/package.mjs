@@ -1,20 +1,23 @@
-import { mkdirSync, readFileSync, readdirSync, writeFileSync, statSync, utimesSync, copyFileSync, rmSync } from 'node:fs';
+import { mkdirSync, readFileSync, readdirSync, writeFileSync, utimesSync, rmSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
+import { createCrx, verifyCrx } from './crx.mjs';
 const manifest = JSON.parse(readFileSync('dist/manifest.json', 'utf8'));
-if (manifest.manifest_version !== 3 || manifest.host_permissions?.length) throw Error('Unexpected manifest permissions');
-for (const name of ['content.js', 'background.js', 'core.js', 'storage.js']) {
-  const body = readFileSync(`dist/${name}`, 'utf8');
-  if (/\b(?:fetch|XMLHttpRequest|WebSocket|sendBeacon)\s*\(/.test(body)) throw Error(`Unexpected network code in ${name}`);
-}
-mkdirSync('artifacts', { recursive: true });
-// zip -X with a stable timestamp and sorted inputs; requires the OS zip utility.
-const epoch = new Date('2026-01-01T00:00:00Z');
-for (const name of readdirSync('dist')) if (statSync(`dist/${name}`).isFile()) utimesSync(`dist/${name}`, epoch, epoch);
-const asset = `cautious-review-${manifest.version}.zip`;
-rmSync(`artifacts/${asset}`, { force: true });
-execFileSync('zip', ['-X', '-q', `../artifacts/${asset}`, ...readdirSync('dist').sort()], { cwd: 'dist', env: { ...process.env, TZ: 'UTC' } });
-execFileSync('unzip', ['-t', `artifacts/${asset}`], { stdio: 'inherit' });
-const hash = createHash('sha256').update(readFileSync(`artifacts/${asset}`)).digest('hex');
-writeFileSync('artifacts/SHA256SUMS', `${hash}  ${asset}\n`);
-console.log(`${asset}: ${hash}`);
+if (manifest.manifest_version !== 3 || manifest.host_permissions?.length || manifest.permissions?.length) throw Error('Unexpected manifest permissions');
+if(manifest.content_security_policy?.extension_pages!=="script-src 'self'; object-src 'none'; connect-src 'none'")throw Error('Unexpected CSP');
+const expected=['THIRD_PARTY_NOTICES.txt','assist.js','batch.js','background.js','content.js','core.js','evidence.js','storage.js','manifest.json'].sort();
+const actual=readdirSync('dist').sort();if(JSON.stringify(actual)!==JSON.stringify(expected))throw Error(`Unexpected/missing dist files: ${actual}`);
+for(const name of actual.filter(f=>f.endsWith('.js'))){const body=readFileSync(`dist/${name}`,'utf8');if(/\b(?:fetch|XMLHttpRequest|WebSocket|sendBeacon|importScripts)\s*\(/.test(body)||/\beval\s*\(/.test(body))throw Error(`Unexpected network/eval code: ${name}`);}
+mkdirSync('artifacts',{recursive:true});
+const epoch=new Date('2026-01-01T00:00:00Z');for(const name of actual)utimesSync(`dist/${name}`,epoch,epoch);
+const asset=`cautious-review-${manifest.version}.zip`,crxAsset=`cautious-review-${manifest.version}-preview.crx`;
+rmSync(`artifacts/${asset}`,{force:true});
+execFileSync('zip',['-X','-q',`../artifacts/${asset}`,...actual],{cwd:'dist',env:{...process.env,TZ:'UTC'}});
+execFileSync('unzip',['-t',`artifacts/${asset}`],{stdio:'inherit'});
+const zip=readFileSync(`artifacts/${asset}`),crx=createCrx(zip,process.env.CRX_SIGNING_KEY);
+writeFileSync(`artifacts/${crxAsset}`,crx.bytes);
+if(!verifyCrx(readFileSync(`artifacts/${crxAsset}`),crx.extensionId).zip.equals(zip))throw Error('CRX/ZIP mismatch');
+const hash=b=>createHash('sha256').update(b).digest('hex');
+writeFileSync('artifacts/BUILD.json',JSON.stringify({version:manifest.version,commit:process.env.GITHUB_SHA??'local',zipSha256:hash(zip),crxSha256:hash(crx.bytes),crxExtensionId:crx.extensionId,crxSigning:crx.signingMode,install:'ZIP: extract then Load unpacked. CRX: self-signed preview, not Web Store signed. Ephemeral CRX IDs change each build; no automatic upgrade continuity.',verification:'TypeScript, unit tests, container signatures and exact payload comparison. Browser fixtures are a separate CI release gate. Live Greenhouse writes are not implemented.'},null,2)+'\n');
+writeFileSync('artifacts/SHA256SUMS',[asset,crxAsset,'BUILD.json'].map(name=>`${hash(readFileSync(`artifacts/${name}`))}  ${name}\n`).join(''));
+console.log(`Packaged ZIP and verified CRX3: ${crx.extensionId} (${crx.signingMode}). No private key written to disk.`);

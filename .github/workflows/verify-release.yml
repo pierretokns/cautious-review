@@ -89,12 +89,12 @@ jobs:
           COMMIT: ${{ github.sha }}
         run: |
           tag="preview-${COMMIT:0:12}"
-          notes='Passed TypeScript, unit tests and synthetic browser-fixture gates. ZIP: extract and Load unpacked in Chrome. CRX: cryptographically verified self-signed preview, not Web Store signed; its ephemeral identity is not an upgrade channel. Use ZIP on ordinary Mac/Windows Chrome. Local evidence review, alias search, bulk text import, clean reading, audit export. No live Greenhouse writes, automatic PDF extraction or neural embeddings. Public fixtures are synthetic.'
+          notes='Passed TypeScript, unit tests and synthetic browser-fixture gates. ZIP: extract and Load unpacked in Chrome. CRX: cryptographically verified self-signed preview, not Web Store signed; its ephemeral identity is not an upgrade channel. Use ZIP on ordinary Mac/Windows Chrome. 0.2.1 adds documented app2-app5 Greenhouse hosts and moves Cautious Review actions behind Alt chords so Greenhouse native shortcuts remain untouched. Local evidence review, alias search, bulk text import, clean reading, audit export. No live Greenhouse writes, automatic PDF extraction or neural embeddings. Public fixtures are synthetic.'
           if gh release view "$tag" >/dev/null 2>&1; then
             echo "Commit-specific release already exists; refusing to replace verified bytes."
           else
             gh release create "$tag" artifacts/*.zip artifacts/*.crx artifacts/SHA256SUMS artifacts/BUILD.json \
-              --target "$COMMIT" --prerelease --title "Cautious Review 0.2.0 preview ${COMMIT:0:12}" --notes "$notes"
+              --target "$COMMIT" --prerelease --title "Cautious Review 0.2.1 preview ${COMMIT:0:12}" --notes "$notes"
           fi
   audit-greenmaxing:
     if: github.event_name != 'pull_request'

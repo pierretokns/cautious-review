@@ -1,11 +1,14 @@
-# Verification record — 0.1.1
+# Verification record — 0.2.0
 
-- TypeScript 5.8.3 compilation: PASS.
-- Node 22.16.0: 23 unit tests PASS (identity parsing, ambiguous URLs, application collisions, exact-token search, keyword repetition, Unicode, rejection reason validation).
-- ZIP integrity: checked with unzip -t; SHA-256 accompanies the archive.
-- Full browser fixture: NOT completed in the development sandbox. Chromium returned ERR_BLOCKED_BY_ADMINISTRATOR for both intercepted external navigation and loopback fixture navigation. No browser policy was modified or bypassed.
-- CI includes an offline, synthetic loopback browser fixture using an isolated test-only extension copy. The temporary copy changes host validation only to permit loopback; production host rules are tested independently. Production dist is not modified by this test.
-- Real Greenhouse login, DOM, authorization, APIs and write operations: NOT tested. No live writes are implemented.
-- CRX signing and Web Store publication: NOT implemented. The ZIP is a real unpacked Chrome extension, not a renamed/fake CRX.
+- TypeScript 5.8.3 build: PASS in development.
+- Node 22.16.0: 66 unit tests PASS in development, including the existing identity/keyboard-domain tests and new evidence, import, batch-safety and CRX tests.
+- ZIP: integrity checked by unzip; SHA-256 supplied.
+- CRX3: actual RSA signature and declared developer-ID verification, tampering/truncation tests, exact ZIP-payload comparison. Self-signed preview identity; NOT Chrome Web Store signed or proof of unrestricted installation.
+- Local browser fixture: BLOCKED before navigation by ERR_BLOCKED_BY_ADMINISTRATOR. No browser policy was modified or bypassed.
+- CI: unit, synthetic-browser, and packaging jobs run independently. Releases are gated on all three; see the matching commit's Actions run for actual results. Do not assume a pending run passed.
+- Third-party GreenMaxing inspection: `npm run audit:greenmaxing -- <path.crx>` is a static developer tool, not a release gate. The current environment could not retrieve the proprietary CRX from Google, so the actual package audit remains incomplete.
+- Live Greenhouse DOM/account/API integration, production hiring behavior and neural embeddings: NOT validated or implemented as applicable. No live Greenhouse writes occur.
 
-Do not describe this release as production-ready, fully integrated or end-to-end verified. Do not mark prior-art audits complete merely because they have been discussed.
+Synthetic local retrieval check: 900 documents × 1,500 characters, three query terms, returned 20 hits in about 56 ms on the development host. This is one synthetic observation, not a browser or production performance guarantee.
+
+Do not describe this preview as production-ready or a finished bulk-rejection integration.

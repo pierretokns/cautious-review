@@ -44,6 +44,7 @@ jobs:
           uv run --with playwright==1.57.0 python tests/browser_smoke.py
           uv run --with playwright==1.57.0 python tests/browser_live.py
           uv run --with playwright==1.57.0 python tests/browser_session.py
+          uv run --with playwright==1.57.0 python tests/browser_session_reader.py
       - if: matrix.check == 'browser' && success()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
@@ -95,12 +96,12 @@ jobs:
           COMMIT: ${{ github.sha }}
         run: |
           tag="preview-${COMMIT:0:12}"
-          notes='0.3.1 preview adds opt-in local browser-session diagnostics that export sanitized request structure only. Direct browser-session actions are not yet implemented or validated; work-account observations are required. Optional Harvest v3 integration: explicit human-confirmed reject, advance, same-job move and unreject; verified identity, refreshed previews, durable intent/receipts, read-after-write checks and no blind write retries. A separate cautious-review-token.mjs helper mints a short-lived OAuth token; the client secret never enters the extension. Requires v3 endpoint permissions and a Site Admin user for list calls. Automatic PDF/text resume extraction and bundled offline MiniLM hybrid retrieval. Passed unit and synthetic browser fixtures, including local WASM inference. NOT validated end-to-end against a real Greenhouse account. ZIP: extract and Load unpacked. CRX is a verified self-signed preview, NOT Web Store signed, with ephemeral identity and no update continuity.'
+          notes='0.3.2 adds a no-admin, read-only current-page resume reader using a publicly evidenced private attachment-preview route. It downloads only approved Greenhouse storage URLs and extracts PDF locally. Direct session mutations remain unimplemented. Not validated against a real account. Includes opt-in local browser-session diagnostics that export sanitized request structure only. Browser-session mutations are not implemented; real-account testing is required. Optional Harvest v3 integration: explicit human-confirmed reject, advance, same-job move and unreject; verified identity, refreshed previews, durable intent/receipts, read-after-write checks and no blind write retries. A separate cautious-review-token.mjs helper mints a short-lived OAuth token; the client secret never enters the extension. Requires v3 endpoint permissions and a Site Admin user for list calls. Automatic PDF/text resume extraction and bundled offline MiniLM hybrid retrieval. Passed unit and synthetic browser fixtures, including local WASM inference. NOT validated end-to-end against a real Greenhouse account. ZIP: extract and Load unpacked. CRX is a verified self-signed preview, NOT Web Store signed, with ephemeral identity and no update continuity.'
           if gh release view "$tag" >/dev/null 2>&1; then
             echo "Commit-specific release already exists; refusing to replace verified bytes."
           else
             gh release create "$tag" artifacts/*.zip artifacts/*.crx artifacts/*.mjs artifacts/SHA256SUMS artifacts/BUILD.json \
-              --target "$COMMIT" --prerelease --title "Cautious Review 0.3.1 preview ${COMMIT:0:12}" --notes "$notes"
+              --target "$COMMIT" --prerelease --title "Cautious Review 0.3.2 preview ${COMMIT:0:12}" --notes "$notes"
           fi
   audit-greenmaxing:
     if: github.event_name != 'pull_request'

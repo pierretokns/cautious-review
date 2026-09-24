@@ -10,6 +10,33 @@ test('direct record routes use only the matching path identity', () => {
   assert.deepEqual(routeIdentity(`${origin}/applications/11`), { origin, applicationId: '11' });
 });
 
+test('person application routes extract exactly their two explicit path IDs', () => {
+  for (const suffix of ['', '/redesign']) {
+    assert.deepEqual(
+      routeIdentity(`${origin}/people/21/applications/11${suffix}`),
+      { origin, candidateId: '21', applicationId: '11' },
+    );
+  }
+});
+
+test('person application routes reject query IDs that disagree with their path', () => {
+  for (const query of ['candidate_id=22', 'person_id=22', 'application_id=12', 'job_application_id=12']) {
+    assert.throws(() => routeIdentity(`${origin}/people/21/applications/11?${query}`), /Ambiguous/);
+  }
+});
+
+test('malformed person/application paths are not treated as candidate-only routes', () => {
+  for (const path of ['/people/21/applications', '/people/21/applications/not-an-id', '/people/21/applications/11/other']) {
+    assert.throws(() => routeIdentity(origin + path), /Unsupported/);
+  }
+});
+
+test('person application route IDs do not imply job or stage identity', () => {
+  assert.deepEqual(routeIdentity(`${origin}/people/21/applications/11/redesign`), {
+    origin, candidateId: '21', applicationId: '11',
+  });
+});
+
 test('review route suffix numbers are not guessed as application or candidate IDs', () => {
   assert.deepEqual(routeIdentity(`${origin}/applications/review/999`), { origin });
   assert.deepEqual(routeIdentity(`${origin}/plans/777/candidates/888`), { origin });

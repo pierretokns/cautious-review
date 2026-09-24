@@ -1,6 +1,6 @@
 # Cautious Review
 
-**0.3.1 preview** for local résumé evidence review. The next integration direction is browser-session-first, so a reviewer can use their existing Greenhouse session without requiring Harvest Site Admin access. That direct session integration is not implemented yet. The existing Harvest integration remains an optional admin-based route. Greenhouse remains the system of record, and a reviewer chooses each decision and confirms the complete plan before any write is sent.
+**0.3.2 preview** for local résumé evidence review. From a specific Greenhouse application page, a reviewer can use **Read this résumé locally · no admin key** to retrieve its one clearly linked résumé through the current browser session and extract it on-device. This is a narrow, read-only path for one page-linked attachment, not a general Greenhouse session API adapter. The optional Harvest v3 integration remains separate and is required for reviewed Greenhouse actions. Greenhouse remains the system of record; every employment decision stays with the reviewer.
 
 ## Install
 
@@ -10,7 +10,9 @@ The optional CRX is self-signed, not Web Store signed. Its signing identity is e
 
 ## Local review
 
-The extension overlay can queue local advance, maybe, and reject decisions while reviewing a Greenhouse page. It does not write to Greenhouse. The Live Review page is opened from the extension toolbar or overlay and can load applications from Harvest, discover résumé attachments, and retrieve a selected résumé. PDF and UTF-8 text extraction happen in the extension page locally. Scanned PDFs need OCR outside this preview or pasted text.
+The extension overlay can queue local advance, maybe, and reject decisions while reviewing a Greenhouse page. It does not write to Greenhouse. On a specific candidate application page with one visible résumé attachment link or control, click **Read this résumé locally · no admin key**. The extension requests that attachment's preview from the same Greenhouse host using the page's existing signed-in session. It checks that the page identity and selected attachment have not changed, then opens the local reader. Click **Load page-linked résumé locally** there to fetch the approved Greenhouse document URL and extract the PDF locally. The read handoff is one-use, memory-only, and expires after 90 seconds. The reader shows candidate/application IDs from the current page; they are not independently confirmed against Harvest, and the displayed résumé may be attached to the candidate profile rather than that application. Check that the résumé is the version relevant to the application before using its evidence. This path needs no Harvest API key, but your Greenhouse account must allow access to that application and attachment. If the page or attachment is ambiguous or unsupported, use a local PDF/text import instead. Scanned PDFs need OCR outside this preview or pasted text.
+
+The Live Review page remains available from the extension toolbar or overlay. It can load applications and attachments through optional Harvest v3, retrieve selected résumés, and prepare reviewed Greenhouse actions. PDF and UTF-8 text extraction happen in the extension page locally.
 
 Résumé text, local decisions, and their local audit entries are stored in extension-origin IndexedDB. They expire after seven days when cleanup next runs. Live action receipts use a separate local store and persist until cleared. Use **Clear all local data** or a separate Chrome profile when switching Greenhouse accounts on the same origin. Browser history clearing does not reliably clear extension storage. IndexedDB is not application-encrypted.
 
@@ -20,7 +22,7 @@ Local analysis shows source passages, mentions versus self-reported work claims,
 
 The 0.3.1 preview adds an opt-in, passive diagnostic recorder to help map the request and response shapes used by a real Greenhouse browser session. Start it explicitly, browse Greenhouse normally, then stop and export the local JSON file for manual review. It observes same-origin HTTPS JSON fetch/XHR traffic, forwards the original requests and responses unchanged, initiates no requests, and performs no candidate actions. It records only request methods, redacted path templates, allowlisted query-key names, allowlisted request/response schema key names and value types, and HTTP status codes. Candidate values, document contents, cookies, tokens, and authorization values are not retained or exported. The in-memory buffer is limited to 100 observations or ten minutes; it is discarded when the page closes or reloads, and can be cleared before export.
 
-This diagnostic export is untrusted schema evidence, not a verified API contract. Development is happening on the user's personal computer, where the signed-in work Greenhouse session is not available to capture and validate actual request structures. Cautious Review therefore does not yet make direct session-backed reads or actions. No claim of no-admin direct integration or real-account validation is made for this preview.
+This diagnostic export is untrusted schema evidence, not a verified API contract. Public-source research can identify plausible Greenhouse routes, and this preview uses a narrow page-linked résumé preview route. That private interface has not been validated against the user's real Greenhouse account. No general session-backed application listing, parsed-resume endpoint, or candidate action adapter is included.
 
 ## Optional Live Harvest integration
 
@@ -38,7 +40,7 @@ The extension saves a durable `started` receipt before sending each write. It ne
 
 ## Limits and validation
 
-Greenhouse identity and action behavior have not been validated end-to-end against a real Greenhouse account. Automated browser fixtures use synthetic applications and documents; they are not real-account or production hiring validation. See the [0.3.1 preview notes](docs/RELEASE-0.3.1.md), [0.3.0 release notes](docs/RELEASE-0.3.0.md), and [verification record](docs/BUILD-STATUS.md) for scope and limits.
+The page-linked résumé route and identity parsing have not been validated end-to-end against a real Greenhouse account. Automated browser fixtures use synthetic applications and documents; they are not real-account or production hiring validation. See the [0.3.2 preview notes](docs/RELEASE-0.3.2.md), [browser-session research](docs/BROWSER-SESSION-RESEARCH.md), earlier [0.3.1 notes](docs/RELEASE-0.3.1.md), and [verification record](docs/BUILD-STATUS.md) for scope and limits.
 
 Only the listed Greenhouse application hosts are supported: `app.greenhouse.io`, `app2.greenhouse.io`, `app3.greenhouse.io`, `app4.greenhouse.io`, `app5.greenhouse.io`, and `app.eu.greenhouse.io`. Custom SSO subdomains are not included. Candidate data stays local by default, but the Live Review page intentionally sends authorized Harvest requests and résumé downloads to Greenhouse's approved storage hosts.
 

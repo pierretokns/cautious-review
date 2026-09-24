@@ -3,10 +3,35 @@ import { contextFor, search, validateDecision } from './core.js';
 import { clear, decide, documents, purgeExpired, reviews, saveDocument, saveDocumentsAtomic, auditEntries, undo } from './storage.js';
 import { clearReceipts } from './live-store.js';
 import { assess, conceptSearch, diagnostics, ENGINE_VERSION, validateImport } from './evidence.js';
+import { sessionReadContext } from './session-resume.js';
+import { attachmentURL } from './harvest.js';
 let serial: Promise<unknown> = Promise.resolve();
+const readerHandoffs = new Map<string, {expires:number;context:ReturnType<typeof sessionReadContext>;documentUrl:string}>();
 // Content scripts cannot access Harvest credentials or invoke live mutations.
 chrome.runtime.onMessage.addListener((message, sender, respond) => {
+ if (message?.type === 'session-read-context') {
+  if (sender.id !== chrome.runtime.id || sender.frameId !== 0 || !sender.url?.startsWith(chrome.runtime.getURL('session-reader.html')+'?')) return false;
+  if (new URL(sender.url).searchParams.get('id') !== message.id) {respond({ok:false,error:'Invalid reader handoff'});return false;}
+  const id = String(message.id ?? ''), saved = readerHandoffs.get(id); readerHandoffs.delete(id);
+  if (!saved || saved.expires < Date.now()) {respond({ok:false,error:'Reader handoff expired. Open the résumé again from Greenhouse.'});return false;}
+  respond({ok:true,value:{context:saved.context,documentUrl:saved.documentUrl}});return false;
+ }
  if (sender.id !== chrome.runtime.id || sender.frameId !== 0 || !sender.tab) return false;
+ if (message?.type === 'open-session-reader') {
+  void (async()=>{try {
+   if (message.url !== sender.url) throw Error('Page changed');
+   const links = Array.isArray(message.selectedLinks) && message.selectedLinks.length <= 20 ? message.selectedLinks.filter((v:unknown)=>typeof v==='string') : [];
+   const context = sessionReadContext(sender.url ?? '', links);
+   const documentUrl = attachmentURL(String(message.documentUrl ?? ''));
+   for (const [id,item] of readerHandoffs) if(item.expires < Date.now()) readerHandoffs.delete(id);
+   if(readerHandoffs.size >= 10) throw Error('Too many reader windows');
+   const id = crypto.randomUUID(); readerHandoffs.set(id,{expires:Date.now()+90000,context,documentUrl});
+   setTimeout(()=>readerHandoffs.delete(id),90000);
+   try { await chrome.tabs.create({url:chrome.runtime.getURL('session-reader.html')+'?id='+id}); }
+   catch(error) {readerHandoffs.delete(id);throw error;}
+   respond({ok:true});
+  }catch {respond({ok:false,error:'Could not open local reader: application identity or attachment is unavailable.'});}})();return true;
+ }
  if(message?.type === 'open-live') {
   void (async()=>{try { const u=new URL(sender.url??'');
    const facts=Array.isArray(message.facts)?message.facts.filter((v:unknown)=>!!v&&typeof v==='object'&&!Array.isArray(v)):[];
@@ -43,8 +68,8 @@ chrome.runtime.onMessage.addListener((message, sender, respond) => {
     return { engineVersion: ENGINE_VERSION, application: context, sourceSha256: [...new Uint8Array(hash)].map(b => b.toString(16).padStart(2, '0')).join(''), analyzedAt: new Date().toISOString(), criteria, diagnostics: diagnostics(doc.text) };
    }
    case 'import': { const batch = validateImport(message.records, context.origin); await saveDocumentsAtomic(batch); return { imported: batch.length }; }
-   case 'export': return { schemaVersion: 1, extensionVersion: '0.3.1', exportedAt: new Date().toISOString(), origin: context.origin, mode: 'local-review-only', greenhouseWrites: 0, reviews: await reviews(context.origin), audit: await auditEntries(context.origin) };
-   case 'clear': await clear(); await clearReceipts(); return { cleared: true };
+   case 'export': return { schemaVersion: 1, extensionVersion: '0.3.2', exportedAt: new Date().toISOString(), origin: context.origin, mode: 'local-review-only', greenhouseWrites: 0, reviews: await reviews(context.origin), audit: await auditEntries(context.origin) };
+   case 'clear': readerHandoffs.clear(); await clear(); await clearReceipts(); return { cleared: true };
    default: throw Error('Unsupported message');
   }
  });

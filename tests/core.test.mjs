@@ -5,6 +5,15 @@ const app = 'https://app.greenhouse.io';
 for (const path of ['/people/10?job_application_id=20','/candidates/10?application_id=20','/applications/20']) {
   test(`Recognizes ${path}`, () => assert.equal(contextFor(app+path)?.applicationId, '20'));
 }
+for (const path of ['/people/10/applications/20','/people/10/applications/20/redesign']) {
+  test(`Recognizes explicit person/application route ${path}`, () => {
+    const context = contextFor(app + path);
+    assert.equal(context?.candidateId, '10');
+    assert.equal(context?.applicationId, '20');
+    assert.equal(context?.key, `${app}|application:20`);
+    assert.equal(context?.url, app + '/people/10/applications/20');
+  });
+}
 for (const host of ['app.greenhouse.io','app2.greenhouse.io','app3.greenhouse.io','app4.greenhouse.io','app5.greenhouse.io','app.eu.greenhouse.io']) {
   test(`Recognizes documented Recruiting host ${host}`, () => assert.equal(contextFor(`https://${host}/applications/20`)?.applicationId, '20'));
 }
@@ -17,6 +26,16 @@ for (const url of ['https://boards.greenhouse.io/people/10', 'https://app.greenh
 test('Same candidate in different jobs has different application keys', () => assert.notEqual(contextFor(app+'/people/10?application_id=20').key, contextFor(app+'/people/10?application_id=21').key));
 test('Candidate-only context does not invent an application', () => assert.equal(contextFor(app+'/people/10').applicationId, undefined));
 test('Canonical URL discards unrelated query values', () => assert.equal(contextFor(app+'/people/10?job_application_id=20&token=PRIVATE').url, app+'/people/10?job_application_id=20'));
+test('Person/application route query identity must agree with both path IDs', () => {
+  for (const query of ['application_id=21', 'candidate_id=11', 'job_application_id=21&application_id=20']) {
+    assert.equal(contextFor(`${app}/people/10/applications/20?${query}`), null);
+  }
+});
+test('Malformed person/application paths do not fall back to candidate-only identity', () => {
+  for (const path of ['/people/10/applications', '/people/10/applications/nope', '/people/10/applications/20/other']) {
+    assert.equal(contextFor(app + path), null);
+  }
+});
 test('Reject needs explicit supported reason', () => assert.throws(() => validateDecision('reject', '')));
 test('No unknown disposition', () => assert.throws(() => validateDecision('hired', '')));
 test('Valid rejection preserved', () => assert.equal(validateDecision('reject', REASONS[0]).reason, REASONS[0]));

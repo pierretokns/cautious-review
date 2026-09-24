@@ -8,13 +8,19 @@ export function routeIdentity(raw:string, facts:Partial<IdentityHints>[]=[]):Ide
  // review surfaces we support. In particular, a number in a review/list URL
  // is never treated as an application ID by position.
  const record=u.pathname.match(/^\/(people|candidates)\/([1-9]\d*)(?:\/|$)/);
+ // A rendered Greenhouse profile may include the selected application in its
+ // path: /people/{person}/applications/{application}[/redesign]. Both path
+ // segments are explicit identity facts; never derive job/stage from them.
+ const personApplication=u.pathname.match(/^\/people\/([1-9]\d*)\/applications\/([1-9]\d*)(?:\/redesign)?\/?$/);
+ const malformedPersonApplication=/^\/people\/[1-9]\d*\/applications(?:\/|$)/.test(u.pathname)&&!personApplication;
  const application=u.pathname.match(/^\/applications\/([1-9]\d*)(?:\/|$)/);
  const review=/^\/applications\/review(?:\/[^/]+)*(?:\/)?$/.test(u.pathname);
  const planCandidates=/^\/plans\/[^/]+\/candidates(?:\/[^/]+)*(?:\/)?$/.test(u.pathname);
- if(!record&&!application&&!review&&!planCandidates)throw Error('Unsupported Greenhouse route');
+ if(malformedPersonApplication||(!record&&!personApplication&&!application&&!review&&!planCandidates))throw Error('Unsupported Greenhouse route');
  const values:Record<string,string[]>={applicationId:[],candidateId:[],jobId:[],stageId:[]};
  const add=(k:string,v:unknown)=>{if(v!==undefined)values[k].push(numericId(v));};
- if(record)add('candidateId',record[2]);
+ if(personApplication){add('candidateId',personApplication[1]);add('applicationId',personApplication[2]);}
+ else if(record)add('candidateId',record[2]);
  if(application)add('applicationId',application[1]);
  for(const [key,names] of Object.entries({applicationId:['application_id','job_application_id'],candidateId:['candidate_id','person_id'],jobId:['job_id'],stageId:['stage_id']}))for(const n of names)for(const v of u.searchParams.getAll(n))add(key,v);
  for(const f of facts)for(const k of Object.keys(values))add(k,(f as any)[k]);

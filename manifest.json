@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Cautious Review \u2014 local preview",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "Local r\u00e9sum\u00e9 evidence and explicit human-confirmed Greenhouse Harvest actions. Live-testing preview.",
   "minimum_chrome_version": "120",
   "content_scripts": [
@@ -17,7 +17,8 @@
       "js": [
         "content.js",
         "assist.js",
-        "session-ui.js"
+        "session-ui.js",
+        "session-entry.js"
       ],
       "run_at": "document_idle",
       "all_frames": false

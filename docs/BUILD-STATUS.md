@@ -1,5 +1,14 @@
 # Verification record
 
+## 0.3.2 preview candidate
+
+- `npm test` passed all 165 unit tests.
+- Synthetic browser workflows passed 102 checks: 32 base, 23 Live Review, 31 browser-session diagnostics, and 16 page-linked résumé reader checks. These fixtures use synthetic pages, applications, and documents. They do not establish real-account compatibility. The résumé reader checks include offline bundled WASM inference; no real Greenhouse account was used.
+- ZIP/CRX package integrity, CRX signature and exact ZIP payload, and pinned model hash checks passed.
+- After this local verification, the final source update added expired-record cleanup when the résumé reader loads or searches. The final CI run must verify this exact source revision before release.
+
+These checks do not establish compatibility with a live Greenhouse account, attachment ownership by a particular application, production hiring behavior, résumé quality, model suitability, or account permissions. The page-linked résumé preview route was identified from public source evidence and has not been validated against the user's authenticated account.
+
 ## 0.3.1 preview candidate
 
 - `npm test` passes all 152 unit tests.

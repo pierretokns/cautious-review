@@ -5,6 +5,7 @@ const [directory, port] = process.argv.slice(2);
 if (!directory || !/^\d+$/.test(port)) throw Error('Expected temporary extension directory and loopback port');
 const manifest = JSON.parse(readFileSync(`${directory}/manifest.json`, 'utf8'));
 manifest.content_scripts[0].matches = [`http://127.0.0.1:${port}/*`];
+manifest.host_permissions.push(`http://127.0.0.1:${port}/*`);
 writeFileSync(`${directory}/manifest.json`, JSON.stringify(manifest));
 let core = readFileSync(`${directory}/core.js`, 'utf8');
 const start = core.indexOf('if (u.protocol !== "https:"');

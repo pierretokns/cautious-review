@@ -21,9 +21,10 @@ with sync_playwright() as p,tempfile.TemporaryDirectory() as profile:
  mode='normal'
  def route(r):
   u=r.request.url
-  if u.startswith('https://app.greenhouse.io/attachment_previews/'):
+  if any(u.startswith(f'https://{host}.greenhouse.io/attachment_previews/') for host in ['app','app6']):
    calls.append((r.request.method,u))
    source='https://grnhse-dochouse-prod.s3.amazonaws.com/synthetic.pdf?signature=synthetic-secret'
+   if mode=='long':source+='&padding='+('x'*5000)
    if mode=='foreign':source='https://evil.invalid/private.pdf'
    if mode=='stale':page.evaluate("history.replaceState({},'', '/people/22/applications/12/redesign')")
    from urllib.parse import quote
@@ -32,7 +33,7 @@ with sync_playwright() as p,tempfile.TemporaryDirectory() as profile:
    calls.append((r.request.method,'approved-storage'))
    check('authorization' not in r.request.headers and 'cookie' not in r.request.headers,'Document download has no session or Harvest credentials')
    r.fulfill(status=200,content_type='application/pdf',body=pdf());return
-  if u.startswith('https://app.greenhouse.io/people/'):
+  if any(u.startswith(f'https://{host}.greenhouse.io/people/') for host in ['app','app6','app15']):
    extra='<a href="/attachments/82">Resume</a>' if 'ambiguous' in u else ''
    r.fulfill(status=200,content_type='text/html',body=f'<html><body><h1>Synthetic candidate</h1><a href="/attachments/81">View Resume</a>{extra}</body></html>');return
   if u.startswith('chrome-extension://'):r.continue_();return
@@ -45,6 +46,32 @@ with sync_playwright() as p,tempfile.TemporaryDirectory() as profile:
  check(not calls,'No session reads before explicit click')
  page.evaluate("document.querySelector('#cautious-review').shadowRoot.querySelector('#session-read-resume').click()")
  check(not calls,'Page script cannot trigger session read')
+ # Greenhouse uses in-page route changes; the content script is not re-injected
+ # after history.pushState. A navigation from one application to another must
+ # not leave the reader UI bound to the document's original route. Also exercise
+ # app6 host matching and a URL longer than the reader's previous 4096-byte cap.
+ spa=ctx.new_page();spa.on('pageerror',lambda e:errors.append(str(e)))
+ spa.goto('https://app6.greenhouse.io/people/21/applications/11/redesign')
+ spaPanel=spa.locator('#cautious-review')
+ spaPanel.locator('#session-read-resume').wait_for()
+ spa.evaluate("history.replaceState({},'', '/people/21/applications/12/redesign')")
+ mode='long'
+ with ctx.expect_page() as spaOpened:spaPanel.locator('#session-read-resume').click()
+ spaReader=spaOpened.value;spaReader.wait_for_load_state()
+ check('Local reader opened' in spaPanel.locator('#session-read-status').inner_text(),'Reader handoff works after Greenhouse SPA navigation')
+ spaReader.locator('#load').click()
+ spaReader.wait_for_function("()=>document.querySelector('#status').textContent.includes('Résumé text extracted locally')")
+ check('candidate 21, application 12' in spaReader.locator('#identity').inner_text(),'SPA handoff uses the current application, not the document-start route')
+ check('Kubernetes' in spaReader.locator('#resume-text').inner_text(),'app6 page-linked résumé is extracted with a long signed URL')
+ spaReader.close();spa.close()
+ mode='normal'
+ app15=ctx.new_page();app15.goto('https://app15.greenhouse.io/people/21/applications/11/redesign')
+ app15Panel=app15.locator('#cautious-review')
+ app15Panel.locator('#session-read-resume').wait_for()
+ app15.wait_for_function("document.querySelector('#cautious-review').shadowRoot.querySelector('#status').textContent.includes('Application 11. Local-only preview.')")
+ check('Application 11. Local-only preview.' in app15Panel.locator('#status').inner_text(),'app15 panel activates for a specific application')
+ check(app15Panel.locator('#session-read-resume').is_visible(),'app15 local résumé reader is visible')
+ app15.close()
  with ctx.expect_page() as opened:panel.locator('#session-read-resume').click()
  reader=opened.value;reader.on('pageerror',lambda e:errors.append(str(e)));reader.wait_for_load_state()
  check('synthetic-secret' not in reader.url,'Signed document URL stays out of reader address')

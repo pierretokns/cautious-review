@@ -55,7 +55,7 @@ import { validateObservation } from './session-diagnostics.js';
  save.addEventListener('click', event => {
   if (!event.isTrusted || records.length === 0) return;
   finish('Export contains sanitized schema hints, not verified API contracts.');
-  const report = {schemaVersion:1,extensionVersion:'0.3.2',mode:'passive-session-diagnostics',
+  const report = {schemaVersion:1,extensionVersion:'0.3.3',mode:'passive-session-diagnostics',
    verification:'Untrusted observed schema hints only. No session action adapter or real-account validation.',
    observations:records.map(validateObservation).filter(Boolean)};
   const url = URL.createObjectURL(new Blob([JSON.stringify(report,null,2)+'\n'], {type:'application/json'}));

@@ -4,7 +4,7 @@ import { build } from 'esbuild';
 rmSync('dist', { recursive: true, force: true });
 const result = spawnSync(process.platform === 'win32' ? 'tsc.cmd' : 'tsc', ['-p', 'tsconfig.json'], { stdio: 'inherit', shell: process.platform === 'win32' });
 if (result.error || result.status !== 0) { console.error(result.error ?? 'TypeScript compilation failed'); process.exit(1); }
-await build({entryPoints:['src/session-ui.ts','src/session-observer.ts','src/session-entry.ts'],outdir:'dist',bundle:true,format:'iife',target:'chrome120',legalComments:'none'});
+await build({entryPoints:['src/session-ui.ts','src/session-observer.ts','src/session-entry.ts'],outdir:'dist',bundle:true,format:'iife',target:'chrome128',legalComments:'none'});
 mkdirSync('dist', { recursive: true }); cpSync('manifest.json', 'dist/manifest.json');
 console.log('Compiled extension source. Load this directory unpacked in Chrome.');
 cpSync('third_party/THIRD_PARTY_NOTICES.txt', 'dist/THIRD_PARTY_NOTICES.txt');

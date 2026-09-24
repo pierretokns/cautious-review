@@ -15,7 +15,7 @@
     #status { min-height:20px; } #results { max-height:220px;overflow:auto; } article { border-top:1px solid #dde3eb;padding:8px 0; }
     a { color:#16499a; } article p { white-space:pre-wrap; } details { margin-top:8px; } button:disabled { cursor:not-allowed; }
   </style><section>
-    <h2>Cautious Review <small>0.3.2 preview</small></h2>
+    <h2>Cautious Review <small>0.3.3 preview</small></h2>
     <p><strong>Local review queue.</strong> Execute reviewed decisions in Live Review.</p><button id="open-live">Open Live Review & résumé retrieval</button>
     <label><input type="checkbox" id="enabled"> Enable keyboard review on this page</label>
     <small>Alt+A advance · Alt+M maybe · Alt+R reject · Alt+U undo · Alt+J/K navigation</small>
@@ -23,7 +23,7 @@
     <label>Rejection reason (Alt+1–7)<select id="reason"><option value="">Choose a reason</option></select></label>
     <div id="status" role="status" aria-live="polite">Open a specific job application to queue decisions.</div>
     <details><summary>Index résumé text locally</summary>
-      <p>No automatic page scraping. Select résumé text on the page or paste it here. Embedded PDFs are not extracted in this preview.</p>
+      <p>Select résumé text on the page or paste it here. To extract a linked PDF, use “Read this résumé locally” above.</p>
       <textarea id="resume" aria-label="Paste resume text" placeholder="Paste résumé text, or select it on the page"></textarea>
       <button id="capture">Index selected / pasted text</button>
     </details>
@@ -64,7 +64,7 @@
     if (!e.isTrusted) return;
     void (async () => {
       try {
-        const response = await chrome.runtime.sendMessage({ type: 'open-live', facts: ownedFacts() });
+        const response = await chrome.runtime.sendMessage({ type: 'open-live', url: location.href, facts: ownedFacts() });
         if (!response?.ok) status(response?.error ?? "Could not open Live Review. Reload this page and try again.");
         else status("Live Review opened. Confirm the selected application there before any action.");
       } catch {

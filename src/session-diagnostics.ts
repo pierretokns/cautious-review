@@ -1,10 +1,8 @@
 /** Privacy-first schema summaries for user-authorized Greenhouse session diagnostics.
  * This module never retains scalar request/response values, headers, or origins.
  */
-const HOSTS = new Set([
-  'app.greenhouse.io', 'app2.greenhouse.io', 'app3.greenhouse.io', 'app4.greenhouse.io',
-  'app5.greenhouse.io', 'app.eu.greenhouse.io', 'harvest.greenhouse.io', 'api.greenhouse.io',
-]);
+import { HOSTS as RECRUITING_HOSTS } from './core.js';
+const HOSTS = new Set([...RECRUITING_HOSTS, 'harvest.greenhouse.io', 'api.greenhouse.io']);
 const METHODS = new Set(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS']);
 const TYPES = new Set(['null', 'boolean', 'number', 'string', 'array', 'object']);
 const STRUCTURAL_SEGMENTS = new Set([

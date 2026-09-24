@@ -8,6 +8,17 @@ import { attachmentURL } from './harvest.js';
 let serial: Promise<unknown> = Promise.resolve();
 const readerHandoffs = new Map<string, {expires:number;context:ReturnType<typeof sessionReadContext>;documentUrl:string}>();
 // Content scripts cannot access Harvest credentials or invoke live mutations.
+async function currentTabURL(sender: MessageSender): Promise<string> {
+ const tabId = sender.tab?.id;
+ if (typeof tabId !== 'number' || !sender.url) throw Error('Current Greenhouse tab unavailable');
+ const tab = await chrome.tabs.get(tabId);
+ if (typeof tab.url !== 'string') throw Error('Current Greenhouse tab URL unavailable');
+ const document = new URL(sender.url), current = new URL(tab.url);
+ // A content script can survive same-origin Greenhouse history navigation,
+ // while its sender URL still names the original document route.
+ if (document.origin !== current.origin) throw Error('Greenhouse page changed');
+ return current.href;
+}
 chrome.runtime.onMessage.addListener((message, sender, respond) => {
  if (message?.type === 'session-read-context') {
   if (sender.id !== chrome.runtime.id || sender.frameId !== 0 || !sender.url?.startsWith(chrome.runtime.getURL('session-reader.html')+'?')) return false;
@@ -19,10 +30,13 @@ chrome.runtime.onMessage.addListener((message, sender, respond) => {
  if (sender.id !== chrome.runtime.id || sender.frameId !== 0 || !sender.tab) return false;
  if (message?.type === 'open-session-reader') {
   void (async()=>{try {
-   if (message.url !== sender.url) throw Error('Page changed');
+   const pageURL = await currentTabURL(sender);
+   if (message.url !== pageURL) throw Error('Page changed');
    const links = Array.isArray(message.selectedLinks) && message.selectedLinks.length <= 20 ? message.selectedLinks.filter((v:unknown)=>typeof v==='string') : [];
-   const context = sessionReadContext(sender.url ?? '', links);
-   const documentUrl = attachmentURL(String(message.documentUrl ?? ''));
+   const context = sessionReadContext(pageURL, links);
+   const rawDocumentURL = String(message.documentUrl ?? '');
+   if (rawDocumentURL.length > 16000) throw Error('Document URL too long');
+   const documentUrl = attachmentURL(rawDocumentURL);
    for (const [id,item] of readerHandoffs) if(item.expires < Date.now()) readerHandoffs.delete(id);
    if(readerHandoffs.size >= 10) throw Error('Too many reader windows');
    const id = crypto.randomUUID(); readerHandoffs.set(id,{expires:Date.now()+90000,context,documentUrl});
@@ -33,18 +47,27 @@ chrome.runtime.onMessage.addListener((message, sender, respond) => {
   }catch {respond({ok:false,error:'Could not open local reader: application identity or attachment is unavailable.'});}})();return true;
  }
  if(message?.type === 'open-live') {
-  void (async()=>{try { const u=new URL(sender.url??'');
+  void (async()=>{try {
+   const pageURL = await currentTabURL(sender);
+   if (message.url !== pageURL) throw Error('Page changed');
+   const u=new URL(pageURL);
    const facts=Array.isArray(message.facts)?message.facts.filter((v:unknown)=>!!v&&typeof v==='object'&&!Array.isArray(v)):[];
    const hints=routeIdentity(u.href,facts);
    for(const [key,name] of [['applicationId','application_id'],['candidateId','candidate_id'],['jobId','job_id'],['stageId','stage_id']] as const) if(hints[key])u.searchParams.set(name,hints[key]!);
    await chrome.tabs.create({url:chrome.runtime.getURL('live.html')+'?source='+encodeURIComponent(u.href)});respond({ok:true});
   }catch(error){respond({ok:false,error:error instanceof Error?error.message:'Could not open Live Review'});}})();return true;
  }
- const context = contextFor(sender.url ?? ''), requested = contextFor(message?.url ?? '');
- if (!context || !requested || context.key !== requested.key) { respond({ ok: false, error: 'Candidate/application context unavailable or changed' }); return false; }
- serial = serial.catch(() => undefined).then(async () => {
-  await purgeExpired();
-  switch (message.type) {
+ void (async()=>{
+  const pageURL = await currentTabURL(sender).catch(()=>null);
+  const context = pageURL && contextFor(pageURL), requested = contextFor(message?.url ?? '');
+  if (!pageURL || pageURL !== message?.url || !context || !requested || context.key !== requested.key) {
+   respond({ ok: false, error: 'Candidate/application context unavailable or changed' }); return;
+  }
+  serial = serial.catch(() => undefined).then(async () => {
+   const latestURL = await currentTabURL(sender);
+   if (latestURL !== pageURL) throw Error('Candidate/application context changed while queued');
+   await purgeExpired();
+   switch (message.type) {
    case 'context': return context;
    case 'capture': {
     if (typeof message.text !== 'string' || message.text.trim().length < 10 || message.text.length > 200000) throw Error('Select/paste 10–200,000 characters of résumé text');
@@ -68,10 +91,11 @@ chrome.runtime.onMessage.addListener((message, sender, respond) => {
     return { engineVersion: ENGINE_VERSION, application: context, sourceSha256: [...new Uint8Array(hash)].map(b => b.toString(16).padStart(2, '0')).join(''), analyzedAt: new Date().toISOString(), criteria, diagnostics: diagnostics(doc.text) };
    }
    case 'import': { const batch = validateImport(message.records, context.origin); await saveDocumentsAtomic(batch); return { imported: batch.length }; }
-   case 'export': return { schemaVersion: 1, extensionVersion: '0.3.2', exportedAt: new Date().toISOString(), origin: context.origin, mode: 'local-review-only', greenhouseWrites: 0, reviews: await reviews(context.origin), audit: await auditEntries(context.origin) };
+   case 'export': return { schemaVersion: 1, extensionVersion: '0.3.3', exportedAt: new Date().toISOString(), origin: context.origin, mode: 'local-review-only', greenhouseWrites: 0, reviews: await reviews(context.origin), audit: await auditEntries(context.origin) };
    case 'clear': readerHandoffs.clear(); await clear(); await clearReceipts(); return { cleared: true };
    default: throw Error('Unsupported message');
-  }
- });
- serial.then(value => respond({ ok: true, value }), error => respond({ ok: false, error: error instanceof Error ? error.message : 'Local operation failed' })); return true;
+   }
+  });
+  serial.then(value => respond({ ok: true, value }), error => respond({ ok: false, error: error instanceof Error ? error.message : 'Local operation failed' }));
+ })(); return true;
 });

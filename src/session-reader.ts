@@ -1,5 +1,5 @@
 import { contextFor, HOSTS, type CandidateDocument, type Context } from './core.js';
-import { downloadAttachment } from './harvest.js';
+import { attachmentURL, downloadAttachment } from './harvest.js';
 import { extractDocument } from './pdf.js';
 import { saveDocument, documents, purgeExpired } from './storage.js';
 import { assess, diagnostics } from './evidence.js';
@@ -38,17 +38,11 @@ function readContext(input: unknown): ReadContext | null {
   if (!input || typeof input !== 'object') return null;
   const raw = input as Partial<ReadContext>;
   const context = canonicalContext(raw.context);
-  if (!context || typeof raw.documentUrl !== 'string' || raw.documentUrl.length > 4096) return null;
+  if (!context || typeof raw.documentUrl !== 'string' || raw.documentUrl.length > 16000) return null;
   try {
-    const documentUrl = new URL(raw.documentUrl);
-    const approved = new Set([
-      'grnhse-dochouse-prod.s3.amazonaws.com',
-      'grnhse-dochouse-prod.s3.us-east-1.amazonaws.com',
-      'grnhse-dochouse-prod-eu.s3.eu-central-1.amazonaws.com',
-    ]);
-    if (documentUrl.protocol !== 'https:' || documentUrl.port || documentUrl.username || documentUrl.password ||
-        !approved.has(documentUrl.hostname)) return null;
-    return { context, documentUrl: documentUrl.href };
+    const documentUrl = attachmentURL(raw.documentUrl);
+    if (documentUrl.length > 16000) return null;
+    return { context, documentUrl };
   } catch { return null; }
 }
 

@@ -1,5 +1,13 @@
 # Verification record
 
+## 0.3.3 preview candidate
+
+- `npm test` passed all 181 unit tests.
+- Synthetic browser workflows passed 108 checks: 32 base, 23 Live Review, 31 browser-session diagnostics, and 22 page-linked résumé reader checks, using Chromium 145.0.7632.6. The fixtures use synthetic pages, records, and documents; no real Greenhouse account was used. Reader checks include SPA navigation identity validation, an `app15` page, a long signed URL, and offline bundled WASM inference.
+- ZIP/CRX packaging checks passed, including archive integrity, CRX signature and exact ZIP payload, and pinned model hash verification.
+
+These results do not establish compatibility with a live Greenhouse account, attachment ownership by a particular application, production hiring behavior, résumé quality, model suitability, or account permissions. The page-linked résumé preview route was identified from public source evidence and has not been validated against an authenticated account. The 0.3.3 release candidate still requires verification by its exact-commit CI and published-artifact checks.
+
 ## 0.3.2 preview candidate
 
 - `npm test` passed all 165 unit tests.

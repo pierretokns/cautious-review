@@ -10,6 +10,16 @@ test('direct record routes use only the matching path identity', () => {
   assert.deepEqual(routeIdentity(`${origin}/applications/11`), { origin, applicationId: '11' });
 });
 
+test('numbered recruiter shards through app15 support explicit identity while other shards fail closed', () => {
+  for (let shard = 2; shard <= 15; shard++) {
+    const shardOrigin = `https://app${shard}.greenhouse.io`;
+    assert.deepEqual(routeIdentity(`${shardOrigin}/people/21/applications/11/redesign`), {
+      origin: shardOrigin, candidateId: '21', applicationId: '11',
+    });
+  }
+  assert.throws(() => routeIdentity('https://app16.greenhouse.io/people/21/applications/11'), /Unsupported Greenhouse origin/);
+});
+
 test('person application routes extract exactly their two explicit path IDs', () => {
   for (const suffix of ['', '/redesign']) {
     assert.deepEqual(

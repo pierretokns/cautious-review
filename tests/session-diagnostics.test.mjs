@@ -58,6 +58,11 @@ test('rejects unsupported host, malformed URL, method, status, and oversized URL
   ]) assert.equal(sanitizeObservation(input), null);
 });
 
+test('accepts the shared finite recruiter shard list but not unconfigured numeric siblings', () => {
+  assert.equal(sanitizeObservation({ method: 'GET', url: 'https://app15.greenhouse.io/applications/12' })?.pathTemplate, '/applications/:id');
+  assert.equal(sanitizeObservation({ method: 'GET', url: 'https://app16.greenhouse.io/applications/12' }), null);
+});
+
 test('strict body bounds drop whole schemas while preserving safe endpoint metadata', () => {
   const tooLarge = sanitizeObservation({ method: 'POST', url: 'https://app.greenhouse.io/applications/1', requestBody: { status: 'x'.repeat(100_001) } });
   assert.deepEqual(tooLarge, { method: 'POST', pathTemplate: '/applications/:id', queryKeys: [], requestSchema: null, responseSchema: null });

@@ -2,9 +2,10 @@ import { mkdirSync, readFileSync, readdirSync, writeFileSync, statSync, utimesSy
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { createCrx, verifyCrx } from './crx.mjs';
+import { HOSTS } from '../dist/core.js';
 const manifest = JSON.parse(readFileSync('dist/manifest.json', 'utf8'));
 const allowedHosts=['https://harvest.greenhouse.io/*','https://grnhse-dochouse-prod.s3.amazonaws.com/*','https://grnhse-dochouse-prod.s3.us-east-1.amazonaws.com/*','https://grnhse-dochouse-prod-eu.s3.eu-central-1.amazonaws.com/*'];
-if(manifest.manifest_version!==3 || manifest.permissions?.length || JSON.stringify(manifest.host_permissions)!==JSON.stringify(allowedHosts))throw Error('Unexpected manifest permissions');
+if(manifest.manifest_version!==3 || manifest.permissions?.length || JSON.stringify(manifest.host_permissions)!==JSON.stringify([...allowedHosts,...[...HOSTS].map(host=>`https://${host}/*`)]))throw Error('Unexpected manifest permissions');
 const csp="script-src 'self' 'wasm-unsafe-eval'; object-src 'none'; connect-src 'self' "+allowedHosts.map(h=>h.slice(0,-2)).join(' ');
 if(manifest.content_security_policy?.extension_pages!==csp)throw Error('Unexpected CSP');
 const walk=(dir,prefix='')=>readdirSync(dir,{withFileTypes:true}).flatMap(f=>f.isDirectory()?walk(dir+'/'+f.name,prefix+f.name+'/'):[prefix+f.name]);

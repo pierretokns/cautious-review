@@ -96,12 +96,12 @@ jobs:
           COMMIT: ${{ github.sha }}
         run: |
           tag="preview-${COMMIT:0:12}"
-          notes='0.3.2 adds a no-admin, read-only current-page resume reader using a publicly evidenced private attachment-preview route. It downloads only approved Greenhouse storage URLs and extracts PDF locally. Direct session mutations remain unimplemented. Not validated against a real account. Includes opt-in local browser-session diagnostics that export sanitized request structure only. Browser-session mutations are not implemented; real-account testing is required. Optional Harvest v3 integration: explicit human-confirmed reject, advance, same-job move and unreject; verified identity, refreshed previews, durable intent/receipts, read-after-write checks and no blind write retries. A separate cautious-review-token.mjs helper mints a short-lived OAuth token; the client secret never enters the extension. Requires v3 endpoint permissions and a Site Admin user for list calls. Automatic PDF/text resume extraction and bundled offline MiniLM hybrid retrieval. Passed unit and synthetic browser fixtures, including local WASM inference. NOT validated end-to-end against a real Greenhouse account. ZIP: extract and Load unpacked. CRX is a verified self-signed preview, NOT Web Store signed, with ephemeral identity and no update continuity.'
+          notes='0.3.3 adds exact recruiter host support through app15, including app6; fixes panel and reader identity after in-page navigation; accepts approved signed document URLs up to 16 KB consistently; corrects the Chrome minimum to 128; and clarifies no-admin setup. Current-tab identity checks use only the same finite Greenhouse host permissions, without global tabs access. No-admin page-linked PDF extraction and offline MiniLM search remain read-only. Browser-session candidate mutations remain unimplemented; the optional Harvest v3 path supports explicit human-confirmed actions. Unit and synthetic browser checks passed, including app6 PDF reading, app15 activation, navigation, and offline model inference. No real Greenhouse end-to-end validation was performed. ZIP: extract and Load unpacked, then reload Greenhouse. CRX: verified self-signed preview with ephemeral identity, not Web Store signed or a stable update channel.'
           if gh release view "$tag" >/dev/null 2>&1; then
             echo "Commit-specific release already exists; refusing to replace verified bytes."
           else
             gh release create "$tag" artifacts/*.zip artifacts/*.crx artifacts/*.mjs artifacts/SHA256SUMS artifacts/BUILD.json \
-              --target "$COMMIT" --prerelease --title "Cautious Review 0.3.2 preview ${COMMIT:0:12}" --notes "$notes"
+              --target "$COMMIT" --prerelease --title "Cautious Review 0.3.3 preview ${COMMIT:0:12}" --notes "$notes"
           fi
   audit-greenmaxing:
     if: github.event_name != 'pull_request'

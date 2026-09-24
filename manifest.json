@@ -1,9 +1,9 @@
 {
   "manifest_version": 3,
   "name": "Cautious Review \u2014 local preview",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "description": "Local r\u00e9sum\u00e9 evidence and explicit human-confirmed Greenhouse Harvest actions. Live-testing preview.",
-  "minimum_chrome_version": "120",
+  "minimum_chrome_version": "128",
   "content_scripts": [
     {
       "matches": [
@@ -12,6 +12,16 @@
         "https://app3.greenhouse.io/*",
         "https://app4.greenhouse.io/*",
         "https://app5.greenhouse.io/*",
+        "https://app6.greenhouse.io/*",
+        "https://app7.greenhouse.io/*",
+        "https://app8.greenhouse.io/*",
+        "https://app9.greenhouse.io/*",
+        "https://app10.greenhouse.io/*",
+        "https://app11.greenhouse.io/*",
+        "https://app12.greenhouse.io/*",
+        "https://app13.greenhouse.io/*",
+        "https://app14.greenhouse.io/*",
+        "https://app15.greenhouse.io/*",
         "https://app.eu.greenhouse.io/*"
       ],
       "js": [
@@ -30,6 +40,16 @@
         "https://app3.greenhouse.io/*",
         "https://app4.greenhouse.io/*",
         "https://app5.greenhouse.io/*",
+        "https://app6.greenhouse.io/*",
+        "https://app7.greenhouse.io/*",
+        "https://app8.greenhouse.io/*",
+        "https://app9.greenhouse.io/*",
+        "https://app10.greenhouse.io/*",
+        "https://app11.greenhouse.io/*",
+        "https://app12.greenhouse.io/*",
+        "https://app13.greenhouse.io/*",
+        "https://app14.greenhouse.io/*",
+        "https://app15.greenhouse.io/*",
         "https://app.eu.greenhouse.io/*"
       ],
       "js": [
@@ -55,6 +75,22 @@
     "https://harvest.greenhouse.io/*",
     "https://grnhse-dochouse-prod.s3.amazonaws.com/*",
     "https://grnhse-dochouse-prod.s3.us-east-1.amazonaws.com/*",
-    "https://grnhse-dochouse-prod-eu.s3.eu-central-1.amazonaws.com/*"
+    "https://grnhse-dochouse-prod-eu.s3.eu-central-1.amazonaws.com/*",
+    "https://app.greenhouse.io/*",
+    "https://app2.greenhouse.io/*",
+    "https://app3.greenhouse.io/*",
+    "https://app4.greenhouse.io/*",
+    "https://app5.greenhouse.io/*",
+    "https://app6.greenhouse.io/*",
+    "https://app7.greenhouse.io/*",
+    "https://app8.greenhouse.io/*",
+    "https://app9.greenhouse.io/*",
+    "https://app10.greenhouse.io/*",
+    "https://app11.greenhouse.io/*",
+    "https://app12.greenhouse.io/*",
+    "https://app13.greenhouse.io/*",
+    "https://app14.greenhouse.io/*",
+    "https://app15.greenhouse.io/*",
+    "https://app.eu.greenhouse.io/*"
   ]
 }

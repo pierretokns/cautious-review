@@ -1,8 +1,1 @@
-{
-  "name": "cautious-review", "version": "0.1.1", "private": true, "type": "module",
-  "scripts": {
-    "build": "node scripts/build.mjs", "typecheck": "tsc --noEmit",
-    "test": "npm run build && node --test tests/*.test.mjs", "package": "node scripts/package.mjs"
-  },
-  "devDependencies": { "typescript": "5.8.3" }, "engines": { "node": ">=22" }
-}
+{"name":"cautious-review","version":"0.2.0","private":true,"type":"module","scripts":{"build":"node scripts/build.mjs","typecheck":"tsc --noEmit","test":"npm run build && node --test tests/*.test.mjs","package":"node scripts/package.mjs","audit:greenmaxing":"node scripts/audit-greenmaxing.mjs"},"devDependencies":{"typescript":"5.8.3"},"engines":{"node":">=22"}}

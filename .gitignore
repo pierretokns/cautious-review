@@ -1,6 +1,10 @@
 node_modules/
+dist/
 artifacts/
+audit-artifacts/
+.venv/
+__pycache__/
 *.pem
 *.key
-playwright-report/
-dist/
+.env
+.env.*

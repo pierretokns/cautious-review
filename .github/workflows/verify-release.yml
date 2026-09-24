@@ -10,34 +10,45 @@ concurrency:
   group: preview-${{ github.ref }}
   cancel-in-progress: true
 jobs:
-  verify:
+  checks:
+    name: Check ${{ matrix.check }}
     runs-on: ubuntu-24.04
     timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        check: [unit, browser]
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           persist-credentials: false
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version: '22.16.0'
           cache: npm
-      - uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6.8.0
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - if: matrix.check == 'unit'
+        run: npm test
+      - if: matrix.check == 'browser'
+        run: npm run build
+      - if: matrix.check == 'browser'
+        uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e
         with:
           version: '0.8.22'
-      - run: npm ci --ignore-scripts --no-audit --no-fund
-      - run: npm test
-      - name: Install fixture browser
+      - if: matrix.check == 'browser'
         run: uv run --with playwright==1.57.0 playwright install --with-deps chromium
-      - name: Browser fixture tests (no live Greenhouse)
+      - if: matrix.check == 'browser'
+        name: Synthetic browser workflow
         run: uv run --with playwright==1.57.0 python tests/browser_smoke.py
-      - run: npm run package
-  release:
-    needs: verify
-    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+      - if: matrix.check == 'browser' && success()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: synthetic-browser-preview
+          path: artifacts/browser-preview.png
+          retention-days: 14
+  package:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
-    permissions:
-      contents: write
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
@@ -48,17 +59,61 @@ jobs:
           cache: npm
       - run: npm ci --ignore-scripts --no-audit --no-fund
       - run: npm test && npm run package
-      - name: Publish verified commit-specific preview
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: verified-extension-package
+          if-no-files-found: error
+          path: |
+            artifacts/*.zip
+            artifacts/*.crx
+            artifacts/BUILD.json
+            artifacts/SHA256SUMS
+          retention-days: 14
+  release:
+    needs: [checks, package]
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: verified-extension-package
+          path: artifacts
+      - run: cd artifacts && sha256sum --check SHA256SUMS
+      - name: Publish the exact verified artifacts (no rebuild)
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
           COMMIT: ${{ github.sha }}
         run: |
           tag="preview-${COMMIT:0:12}"
+          notes='Passed TypeScript, unit tests and synthetic browser-fixture gates. ZIP: extract and Load unpacked in Chrome. CRX: cryptographically verified self-signed preview, not Web Store signed; its ephemeral identity is not an upgrade channel. Use ZIP on ordinary Mac/Windows Chrome. Local evidence review, alias search, bulk text import, clean reading, audit export. No live Greenhouse writes, automatic PDF extraction or neural embeddings. Public fixtures are synthetic.'
           if gh release view "$tag" >/dev/null 2>&1; then
-            gh release upload "$tag" artifacts/*.zip artifacts/SHA256SUMS --clobber
+            echo "Commit-specific release already exists; refusing to replace verified bytes."
           else
-            gh release create "$tag" artifacts/*.zip artifacts/SHA256SUMS \
-              --target "$COMMIT" --prerelease --title "Cautious Review preview ${COMMIT:0:12}" \
-              --notes "Passed typecheck, unit and offline browser-fixture tests. Extract ZIP; load unpacked in Chrome. Local queue only: no live Greenhouse writes, no embeddings, no embedded-PDF extraction yet. Not a live Greenhouse integration certification."
+            gh release create "$tag" artifacts/*.zip artifacts/*.crx artifacts/SHA256SUMS artifacts/BUILD.json \
+              --target "$COMMIT" --prerelease --title "Cautious Review 0.2.0 preview ${COMMIT:0:12}" --notes "$notes"
           fi
+  audit-greenmaxing:
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22.16.0'
+      - name: Static public CRX inspection; never execute third-party code
+        run: node scripts/audit-greenmaxing.mjs --download
+      - if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: greenmaxing-static-report
+          path: audit-artifacts/greenmaxing-report.json
+          if-no-files-found: warn
+          retention-days: 30

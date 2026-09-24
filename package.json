@@ -1,1 +1,8 @@
-{"name":"cautious-review","version":"0.1.0","private":true,"type":"module","scripts":{"build":"vite build","dev":"vite build --watch","typecheck":"tsc --noEmit"},"devDependencies":{"@types/chrome":"^0.0.287","typescript":"^5.7.3","vite":"^6.0.7","vite-plugin-static-copy":"^2.2.0"}}
+{
+  "name": "cautious-review", "version": "0.1.1", "private": true, "type": "module",
+  "scripts": {
+    "build": "node scripts/build.mjs", "typecheck": "tsc --noEmit",
+    "test": "npm run build && node --test tests/*.test.mjs", "package": "node scripts/package.mjs"
+  },
+  "devDependencies": { "typescript": "5.8.3" }, "engines": { "node": ">=22" }
+}

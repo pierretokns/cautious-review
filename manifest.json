@@ -1,1 +1,11 @@
-{"manifest_version":3,"name":"Cautious Review","version":"0.1.0","description":"Local-first, keyboard-first Greenhouse candidate review.","permissions":["storage"],"host_permissions":["https://*.greenhouse.io/*"],"content_scripts":[{"matches":["https://*.greenhouse.io/*"],"js":["content.js"],"css":["styles.css"],"run_at":"document_idle"}],"background":{"service_worker":"background.js","type":"module"}}
+{
+  "manifest_version": 3, "name": "Cautious Review — local preview", "version": "0.1.1",
+  "description": "Keyboard review, local evidence search, and an undoable local queue. This preview does NOT write to Greenhouse.",
+  "minimum_chrome_version": "120",
+  "content_scripts": [{
+    "matches": ["https://app.greenhouse.io/*", "https://app.eu.greenhouse.io/*"],
+    "js": ["content.js"], "run_at": "document_idle", "all_frames": false
+  }],
+  "background": { "service_worker": "background.js", "type": "module" },
+  "content_security_policy": { "extension_pages": "script-src 'self'; object-src 'none'; connect-src 'none'" }
+}

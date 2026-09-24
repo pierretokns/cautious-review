@@ -1,28 +1,15 @@
-# Architecture
+# Architecture — 0.1.1 preview
 
-Greenhouse is the system of record. Cautious Review is a local browser layer.
+Greenhouse remains the system of record. A classic content script displays a shadow-DOM toolbar. Explicit actions are sent through validated extension runtime messages to an ES-module service worker. The worker owns IndexedDB, search, local decisions and transactional undo history.
 
-## Flow
-1. Extract candidate/application content visible to the authenticated reviewer.
-2. Store candidate documents and queued reviewer decisions in IndexedDB.
-3. Search locally. MVP uses lexical retrieval; next step adds a tiny WASM/WebGPU embedder.
-4. Return source passages as evidence.
-5. Reviewer explicitly chooses advance/maybe/reject.
-6. A future Greenhouse action adapter executes those human decisions in bulk.
+Unlike the initial skeleton, the content script never opens IndexedDB, indexes the entire page, uses an arbitrary pathname as a candidate ID, or indexes on every DOM mutation. Candidate-only pages cannot queue application dispositions. Unknown and conflicting URL identifiers fail closed.
 
-## Non-goals
-- No server for v1.
-- No cloud inference or telemetry.
-- No autonomous rejection.
-- No opaque candidate score as a hiring decision.
+The build uses TypeScript directly: classic content.js plus ES-module background/core/storage. The old Vite configuration, substring search and page-origin storage are removed. This is source/build simplification, not a change to the local-first design.
 
-## Local ML interface
+## Shipping loop
 
-```ts
-interface Embedder {
-  embed(texts: string[]): Promise<Float32Array[]>;
-  modelId(): string;
-}
-```
+A push starts tests immediately. A successful main-branch run publishes a commit-specific preview ZIP and checksum. Publication requires the independent browser fixture job to pass; no release is claimed merely because a workflow file exists. CI creates no coding-agent loop and needs no inference-provider credentials.
 
-The retrieval layer will combine lexical and vector results. Optional Chrome built-in local AI may later do query expansion or evidence extraction, but core review must work without it.
+## Next increments
+
+Real Greenhouse DOM/application identification fixtures; account-scoped storage; approved Harvest/session action adapter with preview, permissions and retry safety; PDF.js local parsing; tiny local embeddings behind a narrow interface; evidence-backed job criteria; readability diagnostics separate from capability; full audit export. No autonomous employment disposition.

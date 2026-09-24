@@ -13,7 +13,7 @@
  <div class="row"><button id="cr-export">Export queue & audit JSON</button><button id="cr-report" disabled>Export evidence report</button></div>
  <small>Exports contain confidential applicant information. No automatic uploads. Visual fonts and AI authorship cannot be determined from plain text.</small>`;
  root.querySelector('section')!.append(section);
- root.querySelector('h2 small')!.textContent = '0.2.0 preview';
+ root.querySelector('h2 small')!.textContent = '0.2.1 preview';
  const $ = <T extends Element = HTMLElement>(q: string) => root.querySelector<T>(q)!;
  let generation = 0, route = location.href, lastReport: unknown, busy = false;
  const status = (s: string) => { $('#status').textContent = s; };

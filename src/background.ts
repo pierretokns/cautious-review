@@ -33,7 +33,7 @@ chrome.runtime.onMessage.addListener((message, sender, respond) => {
     return { engineVersion: ENGINE_VERSION, application: context, sourceSha256: [...new Uint8Array(hash)].map(b => b.toString(16).padStart(2, '0')).join(''), analyzedAt: new Date().toISOString(), criteria, diagnostics: diagnostics(doc.text) };
    }
    case 'import': { const batch = validateImport(message.records, context.origin); await saveDocumentsAtomic(batch); return { imported: batch.length }; }
-   case 'export': return { schemaVersion: 1, extensionVersion: '0.2.0', exportedAt: new Date().toISOString(), origin: context.origin, mode: 'local-review-only', greenhouseWrites: 0, reviews: await reviews(context.origin), audit: await auditEntries(context.origin) };
+   case 'export': return { schemaVersion: 1, extensionVersion: '0.2.1', exportedAt: new Date().toISOString(), origin: context.origin, mode: 'local-review-only', greenhouseWrites: 0, reviews: await reviews(context.origin), audit: await auditEntries(context.origin) };
    case 'clear': await clear(); return { cleared: true };
    default: throw Error('Unsupported message');
   }

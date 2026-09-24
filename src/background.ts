@@ -1,6 +1,7 @@
 import {routeIdentity} from './identity.js';
 import { contextFor, search, validateDecision } from './core.js';
 import { clear, decide, documents, purgeExpired, reviews, saveDocument, saveDocumentsAtomic, auditEntries, undo } from './storage.js';
+import { clearReceipts } from './live-store.js';
 import { assess, conceptSearch, diagnostics, ENGINE_VERSION, validateImport } from './evidence.js';
 let serial: Promise<unknown> = Promise.resolve();
 // Content scripts cannot access Harvest credentials or invoke live mutations.
@@ -43,7 +44,7 @@ chrome.runtime.onMessage.addListener((message, sender, respond) => {
    }
    case 'import': { const batch = validateImport(message.records, context.origin); await saveDocumentsAtomic(batch); return { imported: batch.length }; }
    case 'export': return { schemaVersion: 1, extensionVersion: '0.3.0', exportedAt: new Date().toISOString(), origin: context.origin, mode: 'local-review-only', greenhouseWrites: 0, reviews: await reviews(context.origin), audit: await auditEntries(context.origin) };
-   case 'clear': await clear(); return { cleared: true };
+   case 'clear': await clear(); await clearReceipts(); return { cleared: true };
    default: throw Error('Unsupported message');
   }
  });

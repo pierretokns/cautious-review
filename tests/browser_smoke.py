@@ -18,6 +18,7 @@ HTML = '''<!doctype html><html><body><h1>Synthetic Candidate</h1><main>
 <a href="/people/101?job_application_id=202" aria-label="Next candidate">Next candidate</a>
 </main></body></html>'''
 GET_ALL = """async store => {const d=await new Promise((res,rej)=>{const r=indexedDB.open('cautious-review-private-v2');r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)});return new Promise((res,rej)=>{const r=d.transaction(store).objectStore(store).getAll();r.onsuccess=()=>{d.close();res(r.result)};r.onerror=()=>rej(r.error)})}"""
+LIVE_RECEIPTS = """async mode => {const d=await new Promise((res,rej)=>{const r=indexedDB.open('cautious-review-live-v1',1);r.onupgradeneeded=()=>{if(!r.result.objectStoreNames.contains('receipts'))r.result.createObjectStore('receipts',{autoIncrement:true})};r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)});return new Promise((res,rej)=>{const tx=d.transaction('receipts',mode==='seed'?'readwrite':'readonly'),store=tx.objectStore('receipts');if(mode==='seed')store.add({planId:'smoke-plan',actor:'51',applicationId:'11',action:'reject',status:'unknown',at:new Date().toISOString()});const req=store.getAll();req.onsuccess=()=>{const result=req.result;tx.oncomplete=()=>{d.close();res(result)}};req.onerror=()=>{d.close();rej(req.error)};tx.onerror=tx.onabort=()=>{d.close();rej(tx.error)}})}"""
 class FixtureHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         self.send_response(200); self.send_header('Content-Type','text/html'); self.end_headers(); self.wfile.write(HTML.encode())
@@ -109,8 +110,10 @@ with sync_playwright() as p, tempfile.TemporaryDirectory() as profile, tempfile.
     panel.locator('#queue-list').click();page.wait_for_timeout(200)
     check(panel.locator('#results article').count()==2,'Queue lists both applications')
     page.screenshot(path=str(ROOT/'artifacts/browser-preview.png'),full_page=True)
+    worker.evaluate(LIVE_RECEIPTS,'seed')
+    check(len(worker.evaluate(LIVE_RECEIPTS,'read'))==1,'Synthetic live receipt seeded before clear')
     page.on('dialog',lambda dialog:dialog.accept());panel.locator('#clear').click();status('All local data cleared')
-    check(rows('documents')==[] and rows('reviews')==[] and rows('audit')==[],'Clear removes all local stores')
+    check(rows('documents')==[] and rows('reviews')==[] and rows('audit')==[] and worker.evaluate(LIVE_RECEIPTS,'read')==[],'Clear removes local documents, reviews, audit, and live receipts')
     check(errors==[],f'No renderer errors: {errors}')
     check(unexpected==[],f'No outbound page requests: {unexpected}')
     ctx.close()

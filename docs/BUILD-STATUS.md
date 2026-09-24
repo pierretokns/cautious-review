@@ -3,7 +3,7 @@
 Local verification for the current 0.3.0 working tree:
 
 - `npm test` rebuilt the extension and passed all 143 unit tests.
-- Synthetic browser workflows passed 31 base checks and 23 Live Review checks using Chromium 145.0.7632.6. The fixture intercepts Harvest and storage requests with synthetic data. It exercises PDF extraction, offline bundled WASM inference, reviewed writes, read-after-write reconciliation, rejection-reason confirmation, and unknown-write handling.
+- Synthetic browser workflows passed 32 base checks and 23 Live Review checks (55 total) using Chromium 145.0.7632.6. The fixture intercepts Harvest and storage requests with synthetic data. It exercises PDF extraction, offline bundled WASM inference, reviewed writes, read-after-write reconciliation, rejection-reason confirmation, and unknown-write handling.
 - `npm run package` created the ZIP, CRX, and standalone token helper. ZIP integrity passed; the CRX signature and exact ZIP payload were verified; the model file hash matched `third_party/MODEL.json`; all entries in `SHA256SUMS` verified. The package inventory includes the model Apache-2.0 text and separate bundled-library license notices.
 - The CRX is self-signed with an ephemeral identity, not Web Store signed. The token helper is distributed separately from the extension ZIP and CRX.
 

@@ -1,15 +1,34 @@
-# Architecture — 0.1.1 preview
+# Architecture
 
-Greenhouse remains the system of record. A classic content script displays a shadow-DOM toolbar. Explicit actions are sent through validated extension runtime messages to an ES-module service worker. The worker owns IndexedDB, search, local decisions and transactional undo history.
+## Current data flow
 
-Unlike the initial skeleton, the content script never opens IndexedDB, indexes the entire page, uses an arbitrary pathname as a candidate ID, or indexes on every DOM mutation. Candidate-only pages cannot queue application dispositions. Unknown and conflicting URL identifiers fail closed.
+1. Greenhouse remains the system of record.
+2. The content script exposes a Shadow DOM review panel only on validated Greenhouse application/candidate URLs.
+3. Candidate résumé text is indexed only after explicit selection/paste or reviewed local JSON import. There is no automatic page scraping in 0.2.0.
+4. The extension service worker owns IndexedDB, keeping cached applicant text and review state out of the Greenhouse page origin.
+5. Retrieval and criteria analysis run locally and return exact supporting text/source offsets.
+6. Reviewer dispositions are queued locally with transactional undo/audit history.
+7. No runtime network primitive or live Greenhouse write adapter is shipped yet.
 
-The build uses TypeScript directly: classic content.js plus ES-module background/core/storage. The old Vite configuration, substring search and page-origin storage are removed. This is source/build simplification, not a change to the local-first design.
+## Evidence model
 
-## Shipping loop
+Evidence is deliberately not a candidate score. For each reviewer-entered job criterion the local engine reports one of:
 
-A push starts tests immediately. A successful main-branch run publishes a commit-specific preview ZIP and checksum. Publication requires the independent browser fixture job to pass; no release is claimed merely because a workflow file exists. CI creates no coding-agent loop and needs no inference-provider credentials.
+- `not_established` — no supported text found; absence is not treated as proof of lack of skill.
+- `mention` — terminology appears without a configured work-action signal.
+- `work_claim` — résumé text contains a self-reported work claim around the criterion.
+- `possible_negation` — nearby language may negate or conflict with the criterion and requires review.
 
-## Next increments
+Every positive/uncertain result preserves the original quote, match alias and source offsets.
 
-Real Greenhouse DOM/application identification fixtures; account-scoped storage; approved Harvest/session action adapter with preview, permissions and retry safety; PDF.js local parsing; tiny local embeddings behind a narrow interface; evidence-backed job criteria; readability diagnostics separate from capability; full audit export. No autonomous employment disposition.
+## Readability diagnostics
+
+Text diagnostics are a separate channel from capability evidence. They can flag extraction duplication, extreme bullet length/count, invisible Unicode, and decoding corruption. They never alter retrieval order or disposition. Visual typography requires future document/PDF layout extraction and must remain separately labeled.
+
+## Future local semantic retrieval
+
+Issue #1 tracks an optional `Embedder` boundary for tiny browser-local WASM/WebGPU models. Prior art such as SemanticFinder demonstrates feasibility, but model acquisition/caching, deterministic versioning, memory limits, CSP, offline behavior and evidence mapping must be resolved before adding it. Core review must continue to work without a model.
+
+## Future Greenhouse writes
+
+`src/batch.ts` contains a disconnected reviewed-batch execution core. A live adapter must provide per-item preflight, apply, durable receipt recording and rate-limit pacing. It may execute explicit reviewer decisions; it must not translate retrieval/model scores into automatic dispositions. Unknown write outcomes stop execution until server state is reconciled.

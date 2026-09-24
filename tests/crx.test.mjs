@@ -1,0 +1,13 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { createCrx, verifyCrx } from '../scripts/crx.mjs';
+const zip=Buffer.concat([Buffer.from([0x50,0x4b,3,4]),Buffer.from('synthetic payload; ZIP integrity is separately checked by unzip')]);
+const result=createCrx(zip);
+test('CRX3 round trip preserves exact archive',()=>assert.ok(verifyCrx(result.bytes,result.extensionId).zip.equals(zip)));
+test('CRX extension ID is 32 a-p characters',()=>assert.match(result.extensionId,/^[a-p]{32}$/));
+test('body tampering invalidates signature',()=>{const b=Buffer.from(result.bytes);b[b.length-1]^=1;assert.throws(()=>verifyCrx(b),/signature/)});
+test('truncated header rejected',()=>assert.throws(()=>verifyCrx(result.bytes.subarray(0,20))));
+test('oversized header rejected',()=>{const b=Buffer.from(result.bytes);b.writeUInt32LE(0xffffffff,8);assert.throws(()=>verifyCrx(b),/header length/)});
+test('wrong extension identity rejected',()=>assert.throws(()=>verifyCrx(result.bytes,'a'.repeat(32)),/extension ID/));
+test('not a renamed zip',()=>assert.throws(()=>verifyCrx(zip),/CRX3/));
+test('no key or private material in output metadata',()=>{assert.equal(result.signingMode,'ephemeral-preview-key');assert.ok(!Object.keys(result).some(k=>/private|pem/i.test(k)))});

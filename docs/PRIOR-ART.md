@@ -26,6 +26,10 @@ PDF.js 5.4.624 is bundled under Apache-2.0. Transformers.js 3.8.1, its bundled `
 
 Chrome Web Store ID: `npplpgbebfjnhmnaehlbhiohclhfgcml`. Public interaction concepts informed keyboard review and explicit bulk confirmation. No proprietary GreenMaxing code is copied or redistributed. `scripts/audit-greenmaxing.mjs --download` inspects the public signed CRX, verifies developer identity and signatures, inventories manifest permissions/files, and scans static network/dynamic-code indicators. It does not execute the extension, access Greenhouse, or use applicant data. A successful static scan is not a dynamic security audit or corporate approval; a failed download or verification is blocked, not a pass.
 
+## Browser-session diagnostics — new, passive code
+
+The 0.3.1 preview adds a locally implemented, opt-in observer for sanitized request-schema hints from normal Greenhouse browsing. It does not reuse or port a session API client, does not initiate requests, and does not perform candidate actions. The observer is not a verified API contract. Direct session-backed integration remains unimplemented: development is happening on the user's personal computer, without the signed-in work Greenhouse session needed to capture and validate real request structures.
+
 ## Not claimed as reused
 
 The Searches implementation was not located. ApplyVerse, Autograph, Emplorio, and other previously discussed projects have not been incorporated. Local evidence rules are new code, not a port of an uninspected fit engine.

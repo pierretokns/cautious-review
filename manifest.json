@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Cautious Review \u2014 local preview",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Local r\u00e9sum\u00e9 evidence and explicit human-confirmed Greenhouse Harvest actions. Live-testing preview.",
   "minimum_chrome_version": "120",
   "content_scripts": [
@@ -16,10 +16,27 @@
       ],
       "js": [
         "content.js",
-        "assist.js"
+        "assist.js",
+        "session-ui.js"
       ],
       "run_at": "document_idle",
       "all_frames": false
+    },
+    {
+      "matches": [
+        "https://app.greenhouse.io/*",
+        "https://app2.greenhouse.io/*",
+        "https://app3.greenhouse.io/*",
+        "https://app4.greenhouse.io/*",
+        "https://app5.greenhouse.io/*",
+        "https://app.eu.greenhouse.io/*"
+      ],
+      "js": [
+        "session-observer.js"
+      ],
+      "run_at": "document_start",
+      "all_frames": false,
+      "world": "MAIN"
     }
   ],
   "background": {

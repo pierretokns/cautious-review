@@ -15,7 +15,7 @@
     #status { min-height:20px; } #results { max-height:220px;overflow:auto; } article { border-top:1px solid #dde3eb;padding:8px 0; }
     a { color:#16499a; } article p { white-space:pre-wrap; } details { margin-top:8px; } button:disabled { cursor:not-allowed; }
   </style><section>
-    <h2>Cautious Review <small>0.3.0 preview</small></h2>
+    <h2>Cautious Review <small>0.3.1 preview</small></h2>
     <p><strong>Local review queue.</strong> Execute reviewed decisions in Live Review.</p><button id="open-live">Open Live Review & résumé retrieval</button>
     <label><input type="checkbox" id="enabled"> Enable keyboard review on this page</label>
     <small>Alt+A advance · Alt+M maybe · Alt+R reject · Alt+U undo · Alt+J/K navigation</small>

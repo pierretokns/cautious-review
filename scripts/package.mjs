@@ -9,7 +9,7 @@ const csp="script-src 'self' 'wasm-unsafe-eval'; object-src 'none'; connect-src 
 if(manifest.content_security_policy?.extension_pages!==csp)throw Error('Unexpected CSP');
 const walk=(dir,prefix='')=>readdirSync(dir,{withFileTypes:true}).flatMap(f=>f.isDirectory()?walk(dir+'/'+f.name,prefix+f.name+'/'):[prefix+f.name]);
 const actual=walk('dist').sort();
-const expected=['THIRD_PARTY_NOTICES.txt','assist.js','batch.js','background.js','content.js','core.js','evidence.js','storage.js','manifest.json','harvest.js','identity.js','live-store.js','live.js','pdf.js','semantic.js','live.html','live.css','launcher.html',
+const expected=['THIRD_PARTY_NOTICES.txt','assist.js','session-ui.js','session-observer.js','session-diagnostics.js','batch.js','background.js','content.js','core.js','evidence.js','storage.js','manifest.json','harvest.js','identity.js','live-store.js','live.js','pdf.js','semantic.js','live.html','live.css','launcher.html',
 'vendor/pdf.mjs','vendor/pdf.worker.mjs','vendor/PDFJS-LICENSE.txt','vendor/transformers.min.js','vendor/ort-wasm-simd-threaded.jsep.mjs','vendor/ort-wasm-simd-threaded.jsep.wasm','vendor/TRANSFORMERS-LICENSE.txt','vendor/JINJA-LICENSE.txt','vendor/ONNX-LICENSE.txt','vendor/ONNX-ThirdPartyNotices.txt','models/minilm/LICENSE',
 ...JSON.parse(readFileSync('third_party/MODEL.json','utf8')).files.map(f=>'models/minilm/'+f.path)].sort();
 if(JSON.stringify(actual)!==JSON.stringify(expected))throw Error('Unexpected/missing dist files: '+actual);

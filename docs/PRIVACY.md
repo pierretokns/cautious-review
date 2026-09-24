@@ -1,4 +1,4 @@
-# Privacy — 0.3.0 preview
+# Privacy — 0.3.1 preview
 
 Candidate text, local review decisions, and local semantic-search inputs stay in the extension. There is no hosted model, telemetry, analytics, or candidate-data server. The bundled MiniLM model runs in browser WASM, with remote model loading disabled. PDF.js, its worker, and model assets are packaged locally; PDF parsing can use installed system fonts.
 
@@ -13,3 +13,11 @@ Retrieved documents are capped at 20 MB; extracted text is capped at 200,000 cha
 The numeric user ID is passed as OAuth `sub` and verified as an active Greenhouse user before use. Greenhouse requires a Site Admin authorizing user for list endpoints. Configure only the endpoint permissions for the intended reads and reviewed actions in the Harvest V3 OAuth credential. Organization-configured Greenhouse automations may run after a write; Cautious Review does not request a rejection email.
 
 Browser fixtures use synthetic records and documents. They are not real-account end-to-end validation. Do not commit applicant documents, receipts, credentials, signing keys, or browser profiles to this public repository. Greenhouse is the system of record; local retention and receipts are not a substitute for required HR recordkeeping.
+
+## Opt-in browser-session diagnostics
+
+The preview includes a passive observer to help map Greenhouse's browser-session request shapes. Recording is off until the reviewer explicitly starts it. While on, it observes same-origin HTTPS JSON fetch/XHR traffic from normal page activity, passes the original calls and results through unchanged, and does not create network requests or invoke candidate actions. The sanitized observations contain request methods, redacted path templates, allowlisted query-key names, allowlisted request and response schema key names and value types, and HTTP status codes. Bounded JSON bodies are converted immediately to canonical schema summaries; raw bodies and scalar values are not retained or exported. Cookies, tokens, authorization values, and other header values are not captured. Treat schema observations as untrusted hints, not a stable or verified API contract.
+
+Observations exist only in the current page's memory, up to 100 records or ten minutes. Stopping retains the sanitized buffer for manual export; clearing deletes it. Export is an explicit local file download named `cautious-review-session-diagnostics.json`. Reloading or closing the page discards the buffer. Review the exported file before sharing it; this is not an automatic upload or telemetry channel.
+
+Direct browser-session-backed Greenhouse reads and actions are not implemented. Development is happening on the user's personal computer, where the signed-in work Greenhouse session needed to capture and validate real request structures is not available. Synthetic observations do not establish production compatibility. The optional Harvest integration described above still requires its configured permissions and a Site Admin authorizing user for list endpoints.

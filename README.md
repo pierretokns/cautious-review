@@ -1,6 +1,6 @@
 # Cautious Review
 
-**0.3.0 live-testing preview** for local résumé evidence review and explicit, human-confirmed Greenhouse Harvest actions. Greenhouse remains the system of record. A reviewer chooses each decision and confirms the complete plan before any write is sent.
+**0.3.1 preview** for local résumé evidence review. The next integration direction is browser-session-first, so a reviewer can use their existing Greenhouse session without requiring Harvest Site Admin access. That direct session integration is not implemented yet. The existing Harvest integration remains an optional admin-based route. Greenhouse remains the system of record, and a reviewer chooses each decision and confirms the complete plan before any write is sent.
 
 ## Install
 
@@ -16,9 +16,15 @@ Résumé text, local decisions, and their local audit entries are stored in exte
 
 Local analysis shows source passages, mentions versus self-reported work claims, possible negations, and unknowns. Alias and lexical matching is available without a model. Hybrid retrieval can also use the bundled, quantized MiniLM model through local WASM in the browser. It does not use Chrome's built-in AI or a cloud fallback. Retrieval similarity is not a qualification score or a disposition recommendation. Document readability diagnostics remain separate from capability evidence.
 
-## Live Harvest actions
+## Browser-session diagnostics
 
-Harvest v1/v2 endpoints ended on August 31, 2026; this preview uses Harvest v3. In Greenhouse API Credentials, create a **Harvest V3 (OAuth)** credential and select only the needed endpoint permissions. All list endpoints require authorization by a Site Admin, so use an appropriate Site Admin user as the reviewer.
+The 0.3.1 preview adds an opt-in, passive diagnostic recorder to help map the request and response shapes used by a real Greenhouse browser session. Start it explicitly, browse Greenhouse normally, then stop and export the local JSON file for manual review. It observes same-origin HTTPS JSON fetch/XHR traffic, forwards the original requests and responses unchanged, initiates no requests, and performs no candidate actions. It records only request methods, redacted path templates, allowlisted query-key names, allowlisted request/response schema key names and value types, and HTTP status codes. Candidate values, document contents, cookies, tokens, and authorization values are not retained or exported. The in-memory buffer is limited to 100 observations or ten minutes; it is discarded when the page closes or reloads, and can be cleared before export.
+
+This diagnostic export is untrusted schema evidence, not a verified API contract. Development is happening on the user's personal computer, where the signed-in work Greenhouse session is not available to capture and validate actual request structures. Cautious Review therefore does not yet make direct session-backed reads or actions. No claim of no-admin direct integration or real-account validation is made for this preview.
+
+## Optional Live Harvest integration
+
+The existing optional integration uses Harvest v3. It requires a **Harvest V3 (OAuth)** credential, the required endpoint permissions, and a Site Admin authorizing user for list endpoints. It is not the browser-session path and does not remove that admin requirement.
 
 Greenhouse's guidance says to store client secrets server-side. This preview's standalone local helper keeps the secret out of the extension and terminal command line, but uses it on your computer to request a token; it is a local operator convenience, not a hosted credential broker. Download `cautious-review-token.mjs` with the preview release and run it with Node 22 or newer in an interactive terminal. It asks for the OAuth client ID, your numeric Greenhouse user ID, and the client secret (hidden while typing), then requests a short-lived bearer token from `auth.greenhouse.io`. It sends no candidate data and stores no credential or token. The helper asks before printing the token once so you can copy it.
 
@@ -32,7 +38,7 @@ The extension saves a durable `started` receipt before sending each write. It ne
 
 ## Limits and validation
 
-Greenhouse identity and action behavior have not been validated end-to-end against a real Greenhouse account. Automated browser fixtures use synthetic applications and documents; they are not real-account or production hiring validation. See [0.3.0 release notes](docs/RELEASE-0.3.0.md) and the [verification record](docs/BUILD-STATUS.md) for the preview's validation scope.
+Greenhouse identity and action behavior have not been validated end-to-end against a real Greenhouse account. Automated browser fixtures use synthetic applications and documents; they are not real-account or production hiring validation. See the [0.3.1 preview notes](docs/RELEASE-0.3.1.md), [0.3.0 release notes](docs/RELEASE-0.3.0.md), and [verification record](docs/BUILD-STATUS.md) for scope and limits.
 
 Only the listed Greenhouse application hosts are supported: `app.greenhouse.io`, `app2.greenhouse.io`, `app3.greenhouse.io`, `app4.greenhouse.io`, `app5.greenhouse.io`, and `app.eu.greenhouse.io`. Custom SSO subdomains are not included. Candidate data stays local by default, but the Live Review page intentionally sends authorized Harvest requests and résumé downloads to Greenhouse's approved storage hosts.
 

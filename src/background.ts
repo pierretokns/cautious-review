@@ -1,0 +1,1 @@
+chrome.runtime.onInstalled.addListener(()=>console.info("Cautious Review installed; candidate data remains local by default."));

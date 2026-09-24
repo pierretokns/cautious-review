@@ -1,6 +1,6 @@
 # Cautious Review
 
-Local-first, keyboard-first Greenhouse review. **0.2.0 is a local evidence/queue preview, not a complete ATS replacement. It does not execute live Greenhouse rejections.**
+Local-first, keyboard-first Greenhouse review. **0.2.1 is a local evidence/queue preview, not a complete ATS replacement. It does not execute live Greenhouse rejections.**
 
 ## Download and test — no npm needed
 
@@ -12,7 +12,9 @@ A genuine signed CRX3 is also attached, but it is a **self-signed preview**, not
 
 ## What works
 
-Opt-in A/M/R review, numbered rejection reasons, transactional undo, application-scoped records and guarded J/K navigation. Typing in forms does not trigger shortcuts.
+Opt-in keyboard review now uses **Alt chords only**: Alt+A advance, Alt+M maybe, Alt+R reject, Alt+U undo, Alt+J/K guarded navigation, and Alt+1–7 rejection reasons. This deliberately leaves Greenhouse's own unmodified R/M/X, 1–5, arrows, S/Y/N/D and other native shortcuts untouched. Typing in forms/contenteditable fields still cannot trigger Cautious Review actions.
+
+The extension explicitly supports Greenhouse Recruiting on `app.greenhouse.io`, `app2.greenhouse.io`, `app3.greenhouse.io`, `app4.greenhouse.io`, `app5.greenhouse.io`, and `app.eu.greenhouse.io`. Custom SSO subdomains are not granted broad wildcard access yet; see issue #6.
 
 Index selected/pasted résumé text or import a JSON array of `{url, name, text}` records (up to 1,000 / 5 MB). Imports validate completely before any writes and cannot queue dispositions.
 
@@ -26,9 +28,9 @@ Queue/audit export is local JSON, not execution. Data stays in extension-origin 
 
 ## Still missing
 
-Live Greenhouse write/authentication adapter, automatic résumé/PDF extraction, neural embeddings, automatic tenant isolation, permanent evidence-to-decision audit binding and validation against a real Greenhouse account. The tested bulk library is deliberately not wired to unverified live endpoints.
+The highest-priority compatibility gap is Greenhouse's actual `/applications/review/*` workflow and custom SSO subdomains. Cautious Review currently fails closed there rather than guessing identity from arbitrary DOM. Live Greenhouse write/authentication adapter, automatic résumé/PDF extraction, neural embeddings, automatic tenant isolation, permanent evidence-to-decision audit binding and validation against a real Greenhouse account also remain unfinished. The tested bulk library is deliberately not wired to unverified live endpoints.
 
-[Release details and limitations](docs/RELEASE-0.2.0.md) · [Verified prior art and licenses](docs/PRIOR-ART.md) · [Verification record](docs/BUILD-STATUS.md)
+[0.2.0 evidence-engine release notes](docs/RELEASE-0.2.0.md) · [Verified prior art and licenses](docs/PRIOR-ART.md) · [Verification record](docs/BUILD-STATUS.md) · [Greenhouse adapter issue](https://github.com/pierretokns/cautious-review/issues/6)
 
 ## Develop
 
